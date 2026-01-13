@@ -1,4 +1,4 @@
-import { Box, Text } from '@chakra-ui/react';
+import { Box } from '@chakra-ui/react';
 
 export interface KeyboardShortcutProps {
   keys: string[];
@@ -27,10 +27,9 @@ export function KeyboardShortcut({ keys, size = 'sm' }: KeyboardShortcutProps) {
           fontSize={fontSize}
           fontWeight="semibold"
           bg="gray.100"
-          _dark={{ bg: 'gray.700' }}
+          _dark={{ bg: 'gray.700', borderColor: 'gray.600' }}
           borderWidth="1px"
           borderColor="gray.300"
-          _dark={{ borderColor: 'gray.600' }}
           borderRadius="md"
           boxShadow="sm"
           fontFamily="mono"

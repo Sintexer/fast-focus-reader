@@ -5,8 +5,10 @@ import { getSettingsOrDefault, getBook, type Settings, type Book } from '../util
 import { ControlsPanel } from './ControlsPanel';
 import { Box, Container, Flex, HStack, Text, Button } from '@chakra-ui/react';
 import { AnchoredWord } from './AnchoredWord';
+import { TitleDisplay } from './TitleDisplay';
 import { TableOfContents } from './TableOfContents';
 import { BookLocation } from './BookLocation';
+import { SentenceDisplay } from './SentenceDisplay';
 
 export function Reader() {
   const { bookId } = useParams<{ bookId: string }>();
@@ -69,12 +71,7 @@ export function Reader() {
           break;
         case 'ArrowLeft':
           e.preventDefault();
-          const wordIndexInSentence = reader.getWordIndexInSentence();
-          if (wordIndexInSentence > 0) {
-            reader.prevSentence();
-          } else {
-            reader.restartSentence();
-          }
+          reader.prevSentenceStart();
           break;
         case 'Enter':
           e.preventDefault();
@@ -97,6 +94,9 @@ export function Reader() {
   }
   
   const currentWord = reader.getCurrentWord();
+  const currentTitle = reader.getCurrentTitle();
+  const currentSentence = reader.getCurrentSentence();
+  const sentencePunctuation = reader.getSentencePunctuation();
   const totalSentences = reader.getCurrentChapterSentenceCount();
 
   return (
@@ -160,8 +160,25 @@ export function Reader() {
             alignItems="center" 
             justifyContent="center"
             overflow="hidden"
+            px={4}
           >
-            {currentWord ? (
+            {/* Sentence display - only show when not displaying title */}
+            {!reader.state.showingTitle && (
+              <SentenceDisplay
+                sentence={currentSentence}
+                currentWordIndex={reader.state.wordIndex}
+                isVisible={reader.state.showFullSentence}
+                onClose={() => reader.toggleFullSentence()}
+              />
+            )}
+            
+            {/* Title display */}
+            {currentTitle ? (
+              <TitleDisplay
+                title={currentTitle}
+                fontSize={{ base: "2xl", md: "3xl", lg: "4xl", xl: "5xl" }}
+              />
+            ) : currentWord ? (
               <AnchoredWord
                 firstPart={currentWord.firstPart}
                 middleLetter={currentWord.middleLetter}
@@ -169,6 +186,8 @@ export function Reader() {
                 fontSize={{ base: "2xl", md: "3xl", lg: "4xl", xl: "5xl" }}
                 middleLetterColor="blue.500"
                 middleLetterWeight="bold"
+                punctuation={currentWord.punctuation}
+                showPunctuationAbove={sentencePunctuation || undefined}
               />
             ) : (
               <Text fontSize={{ base: "2xl", md: "3xl", lg: "4xl", xl: "5xl" }}>No word</Text>
@@ -193,11 +212,12 @@ export function Reader() {
           {/* Bottom panel - controls */}
           <Box>
             <ControlsPanel
-              onPrevWord={reader.prevWord}
+              onPrevSentenceStart={reader.prevSentenceStart}
               onNextSentence={reader.nextSentence}
               onToggleFullSentence={reader.toggleFullSentence}
               onTogglePlay={reader.togglePlay}
               isPlaying={reader.state.isPlaying}
+              isAtEnd={reader.isAtEnd()}
             />
           </Box>
         </Flex>

@@ -114,7 +114,7 @@ export function TableOfContents({
           onToggle();
         }
       }}
-      placement="start"
+      placement="end"
       size={{ base: 'xs', md: 'sm' }}
     >
       <Drawer.Backdrop />

@@ -8,6 +8,8 @@ export interface AnchoredWordProps {
   fontSize?: TextProps['fontSize'];
   middleLetterColor?: string;
   middleLetterWeight?: TextProps['fontWeight'];
+  punctuation?: string;
+  showPunctuationAbove?: string;
 }
 
 export function AnchoredWord({
@@ -17,6 +19,8 @@ export function AnchoredWord({
   fontSize,
   middleLetterColor = 'blue.500',
   middleLetterWeight = 'bold',
+  punctuation,
+  showPunctuationAbove,
 }: AnchoredWordProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const measureRef = useRef<HTMLSpanElement>(null);
@@ -50,6 +54,25 @@ export function AnchoredWord({
       >
         {firstPart}
       </Box>
+
+      {/* Punctuation indicator on the right (for ! or ? context) */}
+      {showPunctuationAbove && (
+        <Box
+          position="absolute"
+          left="50%"
+          top="50%"
+          transform="translate(calc(50% + 0.3em), -50%)"
+          pointerEvents="none"
+          fontSize="0.4em"
+          opacity={0.25}
+          color="gray.500"
+          _dark={{ color: 'gray.400' }}
+          fontWeight="300"
+          lineHeight="1"
+        >
+          {showPunctuationAbove}
+        </Box>
+      )}
 
       {/* Crosshair lines above and below middle letter */}
       {/* Line above */}
@@ -91,6 +114,11 @@ export function AnchoredWord({
           {middleLetter}
         </Text>
         <Text as="span">{secondPart}</Text>
+        {punctuation && (
+          <Text as="span" fontSize={fontSize} opacity={0.8}>
+            {punctuation}
+          </Text>
+        )}
       </Box>
 
       {/* Zero-width placeholder to reserve space and prevent layout shift */}

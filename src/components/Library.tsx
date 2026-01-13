@@ -8,7 +8,7 @@ const SAMPLE_TEXT_1 = `The quick brown fox jumps over the lazy dog. This is a sa
 
 const SAMPLE_TEXT_2 = `In a distant galaxy, explorers discovered an ancient civilization. The ruins told stories of advanced technology and mysterious disappearances. Scientists worked tirelessly to decode the secrets hidden within the stone tablets. Every discovery brought new questions and deeper mysteries.`;
 
-const SAMPLE_TEXT_3 = `The journey begins with a single step. Adventure awaits those who dare to explore.`;
+const SAMPLE_TEXT_3 = `The journey begins with a single step! Is it true? Adventure awaits those who dare to explore.`;
 
 export function Library() {
   const navigate = useNavigate();

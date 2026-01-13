@@ -2,19 +2,21 @@ import { HStack, Box } from '@chakra-ui/react';
 import { ControlButton } from './ControlButton';
 
 interface ControlsPanelProps {
-  onPrevWord: () => void;
+  onPrevSentenceStart: () => void;
   onNextSentence: () => void;
   onToggleFullSentence: () => void;
   onTogglePlay: () => void;
   isPlaying: boolean;
+  isAtEnd: boolean;
 }
 
 export function ControlsPanel({
-  onPrevWord,
+  onPrevSentenceStart,
   onNextSentence,
   onToggleFullSentence,
   onTogglePlay,
   isPlaying,
+  isAtEnd,
 }: ControlsPanelProps) {
   return (
     <Box p={4}>
@@ -22,7 +24,7 @@ export function ControlsPanel({
         <ControlButton
           label="Prev"
           shortcut={['←']}
-          onClick={onPrevWord}
+          onClick={onPrevSentenceStart}
         />
 
         <ControlButton
@@ -41,6 +43,7 @@ export function ControlsPanel({
           label={isPlaying ? 'Pause' : 'Play'}
           shortcut={['Enter']}
           onClick={onTogglePlay}
+          disabled={isAtEnd}
         />
       </HStack>
     </Box>
