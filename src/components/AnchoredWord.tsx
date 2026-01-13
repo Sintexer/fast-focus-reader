@@ -8,8 +8,11 @@ export interface AnchoredWordProps {
   fontSize?: TextProps['fontSize'];
   middleLetterColor?: string;
   middleLetterWeight?: TextProps['fontWeight'];
-  punctuation?: string;
-  showPunctuationAbove?: string;
+  punctuation?: string; // End-of-sentence punctuation
+  punctuationBefore?: string; // Opening quotes, brackets before word
+  punctuationAfter?: string; // Commas, semicolons, closing brackets after word
+  inDialog?: boolean; // Show dialog indicator (for subtle quote display)
+  inBrackets?: boolean; // Show bracket indicator (for subtle bracket display)
 }
 
 export function AnchoredWord({
@@ -20,13 +23,29 @@ export function AnchoredWord({
   middleLetterColor = 'blue.500',
   middleLetterWeight = 'bold',
   punctuation,
-  showPunctuationAbove,
+  punctuationBefore,
+  punctuationAfter,
+  inDialog,
+  inBrackets,
 }: AnchoredWordProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const measureRef = useRef<HTMLSpanElement>(null);
   const [leftShift, setLeftShift] = useState(0);
 
   const fullWord = firstPart + middleLetter + secondPart;
+  
+  // For quotes and brackets: show subtly if inDialog/inBrackets
+  // If they're already in punctuationBefore/After, they'll be shown there subtly
+  // If not, show them separately
+  const hasQuoteInBefore = punctuationBefore?.match(/[""'«»]/);
+  const hasBracketInBefore = punctuationBefore?.match(/[\(\[\{]/);
+  const showQuoteLeft = inDialog && !hasQuoteInBefore;
+  const showBracketLeft = inBrackets && !hasBracketInBefore;
+  
+  // Calculate full width including punctuation for placeholder
+  const leftPunct = (punctuationBefore || '') + (showQuoteLeft ? '"' : '') + (showBracketLeft ? '(' : '');
+  const rightPunct = (punctuationAfter || '') + (punctuation || '');
+  const fullDisplayText = leftPunct + fullWord + rightPunct;
 
   useLayoutEffect(() => {
     // Measure pixel width of "firstPart" using same font styles
@@ -54,25 +73,6 @@ export function AnchoredWord({
       >
         {firstPart}
       </Box>
-
-      {/* Punctuation indicator on the right (for ! or ? context) */}
-      {showPunctuationAbove && (
-        <Box
-          position="absolute"
-          left="50%"
-          top="50%"
-          transform="translate(calc(50% + 0.3em), -50%)"
-          pointerEvents="none"
-          fontSize="0.4em"
-          opacity={0.25}
-          color="gray.500"
-          _dark={{ color: 'gray.400' }}
-          fontWeight="300"
-          lineHeight="1"
-        >
-          {showPunctuationAbove}
-        </Box>
-      )}
 
       {/* Crosshair lines above and below middle letter */}
       {/* Line above */}
@@ -109,13 +109,40 @@ export function AnchoredWord({
         whiteSpace="nowrap"
         fontSize={fontSize}
       >
+        {/* Subtle punctuation before word */}
+        {punctuationBefore && (
+          <Text as="span" fontSize="0.6em" opacity={0.4} color="gray.700" _dark={{ color: 'gray.400' }}>
+            {punctuationBefore}
+          </Text>
+        )}
+        {/* Subtle quote indicator if in dialog but not already in punctuationBefore */}
+        {showQuoteLeft && (
+          <Text as="span" fontSize="0.6em" opacity={0.4} color="gray.700" _dark={{ color: 'gray.400' }}>
+            "
+          </Text>
+        )}
+        {/* Subtle bracket indicator if in brackets but not already in punctuationBefore */}
+        {showBracketLeft && (
+          <Text as="span" fontSize="0.6em" opacity={0.4} color="gray.700" _dark={{ color: 'gray.400' }}>
+            (
+          </Text>
+        )}
+        
         <Text as="span">{firstPart}</Text>
         <Text as="span" color={middleLetterColor} fontWeight={middleLetterWeight}>
           {middleLetter}
         </Text>
         <Text as="span">{secondPart}</Text>
+        
+        {/* Subtle punctuation after word */}
+        {punctuationAfter && (
+          <Text as="span" fontSize="0.6em" opacity={0.4} color="gray.700" _dark={{ color: 'gray.400' }}>
+            {punctuationAfter}
+          </Text>
+        )}
+        {/* Subtle end-of-sentence punctuation */}
         {punctuation && (
-          <Text as="span" fontSize={fontSize} opacity={0.8}>
+          <Text as="span" fontSize="0.6em" opacity={0.4} color="gray.700" _dark={{ color: 'gray.400' }}>
             {punctuation}
           </Text>
         )}
@@ -123,7 +150,7 @@ export function AnchoredWord({
 
       {/* Zero-width placeholder to reserve space and prevent layout shift */}
       <Text as="span" visibility="hidden" fontSize={fontSize}>
-        {fullWord}
+        {fullDisplayText}
       </Text>
     </Box>
   );

@@ -1,0 +1,5 @@
+---
+name: packagemanager
+---
+
+Use bun instead of npm or npx or yarn

@@ -47,7 +47,7 @@ export function Reader() {
   const reader = useReader({
     book,
     bookId: bookId || null,
-    settings: settings || { initWPM: 200, maxWPM: 400, warmupDuration: 60000 },
+    settings: settings || { initWPM: 100, maxWPM: 100, warmupDuration: 60000 },
   });
   
   // Keyboard handlers
@@ -96,7 +96,6 @@ export function Reader() {
   const currentWord = reader.getCurrentWord();
   const currentTitle = reader.getCurrentTitle();
   const currentSentence = reader.getCurrentSentence();
-  const sentencePunctuation = reader.getSentencePunctuation();
   const totalSentences = reader.getCurrentChapterSentenceCount();
 
   return (
@@ -187,7 +186,10 @@ export function Reader() {
                 middleLetterColor="blue.500"
                 middleLetterWeight="bold"
                 punctuation={currentWord.punctuation}
-                showPunctuationAbove={sentencePunctuation || undefined}
+                punctuationBefore={currentWord.punctuationBefore}
+                punctuationAfter={currentWord.punctuationAfter}
+                inDialog={currentWord.inDialog}
+                inBrackets={currentWord.inBrackets}
               />
             ) : (
               <Text fontSize={{ base: "2xl", md: "3xl", lg: "4xl", xl: "5xl" }}>No word</Text>

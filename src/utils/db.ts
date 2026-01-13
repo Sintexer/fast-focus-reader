@@ -13,7 +13,10 @@ export interface Text {
 export interface Chapter {
   id: string;
   title: string;
-  content: string;
+  // Content as paragraphs (list of paragraphs, each paragraph is a list of sentences)
+  paragraphs?: string[][];
+  // Legacy content field for backward compatibility (will be converted to paragraphs if present)
+  content?: string;
   sentenceCount?: number;
 }
 

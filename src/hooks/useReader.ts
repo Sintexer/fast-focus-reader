@@ -1,19 +1,22 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { saveProgress, getProgress, type Settings, type Book } from '../utils/db';
-import { getWordParts } from '../utils/textProcessor';
+import { getWordParts, type EnrichedWord } from '../utils/textProcessor';
 import { BookIterator } from '../utils/bookIterator';
+import { PUNCTUATION_DELAYS, PARAGRAPH_PAUSE_DELAY } from '../utils/punctuationConfig';
 
 export interface ReaderState {
   volumeId: string;
   chapterId: string;
-  sentenceIndex: number;
+  sentenceIndex: number;  // Global sentence index (for backward compatibility)
   wordIndex: number;
+  paragraphIndex: number; // Current paragraph index
   isPlaying: boolean;
   currentWPM: number;
   showFullSentence: boolean;
   showingTitle: 'volume' | 'chapter' | null;
   previousVolumeId: string;
   previousChapterId: string;
+  requiresManualAdvance: boolean;  // Set to true when full pause needed (paragraph end)
 }
 
 interface UseReaderOptions {
@@ -30,12 +33,14 @@ export function useReader({ book, bookId, settings }: UseReaderOptions) {
     chapterId: '',
     sentenceIndex: 0,
     wordIndex: 0,
+    paragraphIndex: 0,
     isPlaying: false,
     currentWPM: settings.initWPM,
     showFullSentence: false,
     showingTitle: null,
     previousVolumeId: '',
     previousChapterId: '',
+    requiresManualAdvance: false,
   });
   
   const [sessionStartTime] = useState(Date.now());
@@ -65,6 +70,7 @@ export function useReader({ book, bookId, settings }: UseReaderOptions) {
             chapterId: firstChapter.id,
             sentenceIndex: 0,
             wordIndex: 0,
+            paragraphIndex: 0,
             showingTitle: shouldShowVolumeTitle ? 'volume' : (shouldShowChapterTitle ? 'chapter' : null),
           }));
         }
@@ -75,14 +81,23 @@ export function useReader({ book, bookId, settings }: UseReaderOptions) {
   // Load progress on mount
   useEffect(() => {
     if (bookId && book && iteratorRef.current) {
+      const iterator = iteratorRef.current;
       getProgress(bookId).then((progress) => {
-        if (progress) {
+        if (progress && iterator) {
+          // Get paragraph index from sentence index
+          const paraInfo = iterator.getParagraphAndSentenceIndex(
+            progress.volumeId,
+            progress.chapterId,
+            progress.sentenceIndex
+          );
+          
           setState((prev) => ({
             ...prev,
             volumeId: progress.volumeId,
             chapterId: progress.chapterId,
             sentenceIndex: progress.sentenceIndex,
             wordIndex: progress.wordIndex,
+            paragraphIndex: paraInfo?.paragraphIndex ?? 0,
             showingTitle: null, // Don't show title when loading from progress
           }));
         }
@@ -110,58 +125,77 @@ export function useReader({ book, bookId, settings }: UseReaderOptions) {
   }, [settings]);
 
 
-  // Get current word parts
-  const getCurrentWord = useCallback((): { firstPart: string; middleLetter: string; secondPart: string; punctuation?: string } | null => {
+  // Get current enriched word
+  const getCurrentEnrichedWord = useCallback((): EnrichedWord | null => {
     if (!iteratorRef.current) return null;
     
-    // Don't return word parts when showing a title - titles are handled separately
+    // Don't return word when showing a title - titles are handled separately
     if (state.showingTitle) return null;
     
-    // Normal word from sentence
-    const word = iteratorRef.current.getWord(
+    const word = iteratorRef.current.getEnrichedWord(
       state.volumeId,
       state.chapterId,
       state.sentenceIndex,
       state.wordIndex
     );
     
-    if (!word) return null;
-    
-    const language = iteratorRef.current.getLanguage();
-    const parts = getWordParts(word, language);
-    
-    // Extract punctuation from the word (if it's the last word of the sentence)
-    const sentence = iteratorRef.current.getSentence(state.volumeId, state.chapterId, state.sentenceIndex);
-    const isLastWord = sentence && state.wordIndex === sentence.length - 1;
-    let punctuation: string | undefined;
-    
-    if (isLastWord) {
-      // Extract punctuation from the last word
-      const punctuationMatch = word.match(/[.!?…]+$/);
-      if (punctuationMatch) {
-        punctuation = punctuationMatch[0];
-      }
+    // Update paragraph index from word if available
+    if (word && word.paragraphIndex !== undefined && word.paragraphIndex !== state.paragraphIndex) {
+      setState((prev) => ({ ...prev, paragraphIndex: word.paragraphIndex }));
     }
+    
+    return word;
+  }, [state.volumeId, state.chapterId, state.sentenceIndex, state.wordIndex, state.showingTitle, state.paragraphIndex]);
+
+  // Get current word parts (for backward compatibility and display)
+  const getCurrentWord = useCallback((): { 
+    firstPart: string; 
+    middleLetter: string; 
+    secondPart: string; 
+    punctuation?: string;
+    punctuationBefore?: string;
+    punctuationAfter?: string;
+    inDialog?: boolean;
+    inBrackets?: boolean;
+    pauseType?: 'none' | 'small' | 'full';
+  } | null => {
+    const enrichedWord = getCurrentEnrichedWord();
+    if (!enrichedWord) return null;
+    
+    const language = iteratorRef.current?.getLanguage();
+    const parts = getWordParts(enrichedWord.text, language);
     
     return {
       firstPart: parts.before,
       middleLetter: parts.vowel,
       secondPart: parts.after,
-      punctuation,
+      punctuation: enrichedWord.punctuation.endOfSentence || undefined,
+      punctuationBefore: enrichedWord.punctuation.before || undefined,
+      punctuationAfter: enrichedWord.punctuation.after || undefined,
+      inDialog: enrichedWord.context.inDialog,
+      inBrackets: enrichedWord.context.inBrackets,
+      pauseType: enrichedWord.pauseType,
     };
-  }, [state.volumeId, state.chapterId, state.sentenceIndex, state.wordIndex, state.showingTitle]);
+  }, [getCurrentEnrichedWord]);
 
   // Get sentence punctuation (for showing above words)
   const getSentencePunctuation = useCallback((): string | null => {
-    if (!iteratorRef.current || state.showingTitle) return null;
+    const enrichedWord = getCurrentEnrichedWord();
+    if (!enrichedWord) return null;
     
-    const sentence = iteratorRef.current.getSentence(state.volumeId, state.chapterId, state.sentenceIndex);
-    if (!sentence || sentence.length === 0) return null;
+    // Return end-of-sentence punctuation if it's ! or ?
+    if (enrichedWord.punctuation.endOfSentence && /[!?]/.test(enrichedWord.punctuation.endOfSentence)) {
+      return enrichedWord.punctuation.endOfSentence;
+    }
     
-    const lastWord = sentence[sentence.length - 1];
-    const punctuationMatch = lastWord.match(/[!?]+$/);
-    return punctuationMatch ? punctuationMatch[0] : null;
-  }, [state.volumeId, state.chapterId, state.sentenceIndex, state.showingTitle]);
+    return null;
+  }, [getCurrentEnrichedWord]);
+
+  // Get current context (dialog, brackets)
+  const getCurrentContext = useCallback(() => {
+    if (!iteratorRef.current) return { inDialog: false, inBrackets: false };
+    return iteratorRef.current.getCurrentContext();
+  }, []);
 
   // Get current title (volume or chapter)
   const getCurrentTitle = useCallback((): string | null => {
@@ -179,11 +213,24 @@ export function useReader({ book, bookId, settings }: UseReaderOptions) {
     return null;
   }, [book, state.showingTitle, state.volumeId, state.chapterId]);
   
-  // Get current sentence
+  // Get current sentence (for backward compatibility)
   const getCurrentSentence = useCallback((): string[] => {
     if (!iteratorRef.current) return [];
     // If showing a title, return empty array (no sentence to show)
     if (state.showingTitle) return [];
+    
+    // Try to get enriched sentence and convert to string array
+    const enrichedSentence = iteratorRef.current.getEnrichedSentence(
+      state.volumeId,
+      state.chapterId,
+      state.sentenceIndex
+    );
+    
+    if (enrichedSentence) {
+      return enrichedSentence.map(w => w.displayAs || w.originalText);
+    }
+    
+    // Fallback to regular sentence
     return iteratorRef.current.getSentence(state.volumeId, state.chapterId, state.sentenceIndex) || [];
   }, [state.volumeId, state.chapterId, state.sentenceIndex, state.showingTitle]);
 
@@ -290,6 +337,22 @@ export function useReader({ book, bookId, settings }: UseReaderOptions) {
     if (!iteratorRef.current) return;
     
     setState((prev) => {
+      const currentWord = iteratorRef.current!.getEnrichedWord(
+        prev.volumeId,
+        prev.chapterId,
+        prev.sentenceIndex,
+        prev.wordIndex
+      );
+      
+      // Check if current word is at paragraph end - stop and wait for manual advance
+      if (currentWord && currentWord.context.isParagraphEnd && currentWord.pauseType === 'full') {
+        return {
+          ...prev,
+          isPlaying: false,
+          requiresManualAdvance: true,
+        };
+      }
+      
       const sentenceWordCount = iteratorRef.current!.getWordCount(
         prev.volumeId,
         prev.chapterId,
@@ -301,16 +364,26 @@ export function useReader({ book, bookId, settings }: UseReaderOptions) {
         return {
           ...prev,
           wordIndex: prev.wordIndex + 1,
+          requiresManualAdvance: false,
         };
       }
 
-      // Move to next sentence
+      // At end of sentence - automatically continue to next sentence (unless paragraph end)
       const sentenceCount = iteratorRef.current!.getSentenceCount(prev.volumeId, prev.chapterId);
       if (prev.sentenceIndex < sentenceCount - 1) {
+        // Get paragraph info for next sentence
+        const paraInfo = iteratorRef.current!.getParagraphAndSentenceIndex(
+          prev.volumeId,
+          prev.chapterId,
+          prev.sentenceIndex + 1
+        );
+        
         return {
           ...prev,
           sentenceIndex: prev.sentenceIndex + 1,
           wordIndex: 0,
+          paragraphIndex: paraInfo?.paragraphIndex ?? prev.paragraphIndex,
+          requiresManualAdvance: false,
         };
       }
 
@@ -318,6 +391,7 @@ export function useReader({ book, bookId, settings }: UseReaderOptions) {
       return {
         ...prev,
         isPlaying: false,
+        requiresManualAdvance: false,
       };
     });
     
@@ -398,19 +472,29 @@ export function useReader({ book, bookId, settings }: UseReaderOptions) {
           showingTitle: null,
           sentenceIndex: 0,
           wordIndex: 0,
+          paragraphIndex: 0,
           isPlaying: true, // Start autoplay after title
+          requiresManualAdvance: false,
         };
       }
       
       const sentenceCount = iteratorRef.current!.getSentenceCount(prev.volumeId, prev.chapterId);
       
       if (prev.sentenceIndex < sentenceCount - 1) {
-        // Move to next sentence in current chapter
+        // Move to next sentence in current chapter and start autoplay
+        const paraInfo = iteratorRef.current!.getParagraphAndSentenceIndex(
+          prev.volumeId,
+          prev.chapterId,
+          prev.sentenceIndex + 1
+        );
+        
         return {
           ...prev,
           sentenceIndex: prev.sentenceIndex + 1,
           wordIndex: 0,
-          isPlaying: true,
+          paragraphIndex: paraInfo?.paragraphIndex ?? prev.paragraphIndex,
+          isPlaying: true, // Start autoplay for next sentence
+          requiresManualAdvance: false,
         };
       }
 
@@ -435,6 +519,7 @@ export function useReader({ book, bookId, settings }: UseReaderOptions) {
           chapterId: nextChapter.chapterId,
           sentenceIndex: 0,
           wordIndex: 0,
+          paragraphIndex: 0,
           isPlaying: false, // Don't autoplay when showing title
           showingTitle: shouldShowVolumeTitle ? 'volume' : (shouldShowChapterTitle ? 'chapter' : null),
           previousVolumeId: prev.volumeId,
@@ -575,6 +660,7 @@ export function useReader({ book, bookId, settings }: UseReaderOptions) {
           chapterId: nextChapter.chapterId,
           sentenceIndex: 0,
           wordIndex: 0,
+          paragraphIndex: 0,
           isPlaying: true,
         };
       }
@@ -595,6 +681,7 @@ export function useReader({ book, bookId, settings }: UseReaderOptions) {
           chapterId: prevChapter.chapterId,
           sentenceIndex: 0,
           wordIndex: 0,
+          paragraphIndex: 0,
           isPlaying: false,
         };
       }
@@ -625,6 +712,7 @@ export function useReader({ book, bookId, settings }: UseReaderOptions) {
         chapterId,
         sentenceIndex: 0,
         wordIndex: 0,
+        paragraphIndex: 0,
         isPlaying: false,
         showingTitle: shouldShowVolumeTitle ? 'volume' : (shouldShowChapterTitle ? 'chapter' : null),
         previousVolumeId: prev.volumeId,
@@ -635,7 +723,33 @@ export function useReader({ book, bookId, settings }: UseReaderOptions) {
   
   // Toggle play/pause
   const togglePlay = useCallback(() => {
-    setState((prev) => ({ ...prev, isPlaying: !prev.isPlaying }));
+    setState((prev) => {
+      // If we're at the end of a sentence and user wants to play, advance to next sentence first
+      if (prev.requiresManualAdvance && !prev.isPlaying) {
+        // Check if there's a next sentence
+        if (!iteratorRef.current) {
+          return { ...prev, isPlaying: true, requiresManualAdvance: false };
+        }
+        
+        const sentenceCount = iteratorRef.current.getSentenceCount(prev.volumeId, prev.chapterId);
+        if (prev.sentenceIndex < sentenceCount - 1) {
+          // Advance to next sentence and start playing
+          return {
+            ...prev,
+            sentenceIndex: prev.sentenceIndex + 1,
+            wordIndex: 0,
+            isPlaying: true,
+            requiresManualAdvance: false,
+          };
+        }
+      }
+      
+      return { 
+        ...prev, 
+        isPlaying: !prev.isPlaying,
+        requiresManualAdvance: false, // Clear manual advance requirement when toggling
+      };
+    });
   }, []);
   
   // Set WPM manually
@@ -649,14 +763,73 @@ export function useReader({ book, bookId, settings }: UseReaderOptions) {
     setState((prev) => ({ ...prev, showFullSentence: !prev.showFullSentence }));
   }, []);
   
-  // Auto-advance timer
+  // Auto-advance timer with pause logic
   useEffect(() => {
-    // Don't autoplay when showing titles
-    if (state.isPlaying && iteratorRef.current && !state.showingTitle) {
+    // Don't autoplay when showing titles or when manual advance is required
+    if (state.isPlaying && iteratorRef.current && !state.showingTitle && !state.requiresManualAdvance) {
+      // Get current word to check pause type
+      const currentEnrichedWord = iteratorRef.current.getEnrichedWord(
+        state.volumeId,
+        state.chapterId,
+        state.sentenceIndex,
+        state.wordIndex
+      );
+      
+      // If current word requires full pause, stop autoplay immediately
+      if (currentEnrichedWord && currentEnrichedWord.pauseType === 'full') {
+        setState((prev) => ({
+          ...prev,
+          isPlaying: false,
+          requiresManualAdvance: true,
+        }));
+        return;
+      }
+      
       const currentWPM = calculateCurrentWPM();
       setState((prev) => ({ ...prev, currentWPM: currentWPM }));
       
-      const interval = (60 / currentWPM) * 1000;
+      let baseInterval = (60 / currentWPM) * 1000;
+      let delayMultiplier = 1;
+      
+      // Apply delay multiplier for small pauses
+      if (currentEnrichedWord && currentEnrichedWord.pauseType === 'small') {
+        const afterPunct = currentEnrichedWord.punctuation.after;
+        const endOfSentence = currentEnrichedWord.punctuation.endOfSentence;
+        
+        // End-of-sentence punctuation gets a delay
+        if (endOfSentence) {
+          delayMultiplier = 1 + PUNCTUATION_DELAYS.endOfSentence;
+        } else if (afterPunct.includes(',')) {
+          delayMultiplier = 1 + PUNCTUATION_DELAYS.comma;
+        } else if (afterPunct.includes(';')) {
+          delayMultiplier = 1 + PUNCTUATION_DELAYS.semicolon;
+        } else if (afterPunct.includes(':')) {
+          delayMultiplier = 1 + PUNCTUATION_DELAYS.colon;
+        } else if (afterPunct.match(/[—–]/)) {
+          delayMultiplier = 1 + PUNCTUATION_DELAYS.dash;
+        } else if (currentEnrichedWord.specialCase === 'ellipsis') {
+          delayMultiplier = 1 + PUNCTUATION_DELAYS.ellipsis;
+        } else if (currentEnrichedWord.specialCase === 'long-word') {
+          delayMultiplier = 1.2; // 20% longer for long words
+        }
+      }
+      
+      // Add paragraph pause delay if we're at the start of a new paragraph (not the first one)
+      const currentParaInfo = iteratorRef.current.getParagraphAndSentenceIndex(
+        state.volumeId,
+        state.chapterId,
+        state.sentenceIndex
+      );
+      
+      if (currentParaInfo && 
+          currentParaInfo.sentenceIndexInParagraph === 0 && 
+          state.wordIndex === 0 &&
+          currentParaInfo.paragraphIndex > 0) {
+        // We're at the start of a paragraph (not the first) - add paragraph pause delay
+        delayMultiplier = 1 + PARAGRAPH_PAUSE_DELAY;
+      }
+      
+      const interval = baseInterval * delayMultiplier;
       
       timerRef.current = window.setTimeout(() => {
         nextWord();
@@ -673,7 +846,7 @@ export function useReader({ book, bookId, settings }: UseReaderOptions) {
         timerRef.current = null;
       }
     }
-  }, [state.isPlaying, state.wordIndex, state.sentenceIndex, state.showingTitle, calculateCurrentWPM, nextWord]);
+  }, [state.isPlaying, state.wordIndex, state.sentenceIndex, state.showingTitle, state.requiresManualAdvance, state.volumeId, state.chapterId, calculateCurrentWPM, nextWord]);
   
   // Auto-save progress
   useEffect(() => {
@@ -701,9 +874,11 @@ export function useReader({ book, bookId, settings }: UseReaderOptions) {
     wordsRead,
     sessionTime,
     getCurrentWord,
+    getCurrentEnrichedWord,
     getCurrentTitle,
     getCurrentSentence,
     getSentencePunctuation,
+    getCurrentContext,
     getCurrentChapterSentenceCount,
     getWordIndexInSentence,
     isAtEnd,
