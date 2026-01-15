@@ -19,35 +19,17 @@ export function SentenceDisplay({
     <Box
       w="100%"
       maxW="800px"
-      minH="60px"
       maxH="120px"
       p={3}
-      mb={4}
+      mb={40}
       bg="gray.50"
-      _dark={{ bg: 'gray.800' }}
+      _dark={{ bg: 'gray.800', borderColor: 'gray.700' }}
       borderRadius="md"
       borderWidth="1px"
       borderColor="gray.200"
-      _dark={{ borderColor: 'gray.700' }}
       position="relative"
       overflowY="auto"
     >
-      <HStack justifyContent="space-between" alignItems="flex-start" mb={2}>
-        <Text fontSize="xs" color="gray.500" _dark={{ color: 'gray.400' }}>
-          Current Sentence
-        </Text>
-        <IconButton
-          aria-label="Close sentence view"
-          size="xs"
-          variant="ghost"
-          onClick={onClose}
-          minW="auto"
-          h="auto"
-          p={1}
-        >
-          ✕
-        </IconButton>
-      </HStack>
       <Text fontSize="xs" lineHeight="1.6" color="gray.700" _dark={{ color: 'gray.300' }}>
         {sentence.map((word, index) => {
           const isCurrentWord = index === currentWordIndex;

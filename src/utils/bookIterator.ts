@@ -6,7 +6,6 @@ import {
   type EnrichedProcessedText,
   type EnrichedWord
 } from './textProcessor';
-import { SentenceContextTracker, type ContextFlags } from './sentenceContext';
 
 interface CachedChapter {
   chapterId: string;
@@ -19,14 +18,12 @@ export class BookIterator {
   private book: Book;
   private cache: Map<string, CachedChapter>;
   private maxCacheSize: number;
-  private contextTracker: SentenceContextTracker;
   private currentChapterId: string | null = null;
 
   constructor(book: Book, maxCacheSize: number = 10) {
     this.book = book;
     this.cache = new Map();
     this.maxCacheSize = maxCacheSize;
-    this.contextTracker = new SentenceContextTracker();
   }
 
   private getChapter(volumeId: string, chapterId: string): Chapter | null {
@@ -119,9 +116,8 @@ export class BookIterator {
   }
 
   private getEnrichedProcessedChapter(volumeId: string, chapterId: string): EnrichedProcessedText | null {
-    // Reset context tracker if we're switching chapters
+    // Track current chapter
     if (this.currentChapterId !== chapterId) {
-      this.contextTracker.reset();
       this.currentChapterId = chapterId;
     }
 
@@ -220,9 +216,6 @@ export class BookIterator {
     
     const sentence = enriched.sentences[sentenceIndex];
     
-    // Update context tracker with this sentence
-    this.contextTracker.updateContext(sentence);
-    
     return sentence;
   }
 
@@ -268,21 +261,9 @@ export class BookIterator {
     return enriched.paragraphs[paragraphIndex];
   }
 
-  getCurrentContext(): ContextFlags {
-    return this.contextTracker.getContextFlags();
-  }
-
-  isInDialog(): boolean {
-    return this.contextTracker.isInDialog();
-  }
-
-  isInBrackets(): boolean {
-    return this.contextTracker.isInBrackets();
-  }
-
-  // Reset context (e.g., when manually navigating to a new chapter)
-  resetContext(): void {
-    this.contextTracker.reset();
-    this.currentChapterId = null;
+  getCurrentContext(): { inQuotes: boolean; inBrackets: boolean } {
+    // Get context from current word if available
+    // This is a simplified version - context is now per-word
+    return { inQuotes: false, inBrackets: false };
   }
 }

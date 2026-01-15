@@ -4,11 +4,8 @@ import { useReader } from '../hooks/useReader';
 import { getSettingsOrDefault, getBook, type Settings, type Book } from '../utils/db';
 import { ControlsPanel } from './ControlsPanel';
 import { Box, Container, Flex, HStack, Text, Button } from '@chakra-ui/react';
-import { AnchoredWord } from './AnchoredWord';
-import { TitleDisplay } from './TitleDisplay';
 import { TableOfContents } from './TableOfContents';
 import { BookLocation } from './BookLocation';
-import { SentenceDisplay } from './SentenceDisplay';
 
 export function Reader() {
   const { bookId } = useParams<{ bookId: string }>();
@@ -93,9 +90,6 @@ export function Reader() {
     );
   }
   
-  const currentWord = reader.getCurrentWord();
-  const currentTitle = reader.getCurrentTitle();
-  const currentSentence = reader.getCurrentSentence();
   const totalSentences = reader.getCurrentChapterSentenceCount();
 
   return (
@@ -161,54 +155,7 @@ export function Reader() {
             overflow="hidden"
             px={4}
           >
-            {/* Sentence display - only show when not displaying title */}
-            {!reader.state.showingTitle && (
-              <SentenceDisplay
-                sentence={currentSentence}
-                currentWordIndex={reader.state.wordIndex}
-                isVisible={reader.state.showFullSentence}
-                onClose={() => reader.toggleFullSentence()}
-              />
-            )}
             
-            {/* Title display */}
-            {currentTitle ? (
-              <TitleDisplay
-                title={currentTitle}
-                fontSize={{ base: "2xl", md: "3xl", lg: "4xl", xl: "5xl" }}
-              />
-            ) : currentWord ? (
-              <AnchoredWord
-                firstPart={currentWord.firstPart}
-                middleLetter={currentWord.middleLetter}
-                secondPart={currentWord.secondPart}
-                fontSize={{ base: "2xl", md: "3xl", lg: "4xl", xl: "5xl" }}
-                middleLetterColor="blue.500"
-                middleLetterWeight="bold"
-                punctuation={currentWord.punctuation}
-                punctuationBefore={currentWord.punctuationBefore}
-                punctuationAfter={currentWord.punctuationAfter}
-                inDialog={currentWord.inDialog}
-                inBrackets={currentWord.inBrackets}
-              />
-            ) : (
-              <Text fontSize={{ base: "2xl", md: "3xl", lg: "4xl", xl: "5xl" }}>No word</Text>
-            )}
-            
-            {/* Start/Stop button */}
-            <Button
-              aria-label={reader.state.isPlaying ? 'Pause' : 'Play'}
-              size="lg"
-              variant="ghost"
-              onClick={reader.togglePlay}
-              mt={8}
-              fontSize="3xl"
-              minW="80px"
-              h="80px"
-              borderRadius="full"
-            >
-              {reader.state.isPlaying ? '⏸' : '▶'}
-            </Button>
           </Box>
           
           {/* Bottom panel - controls */}

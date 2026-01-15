@@ -4,38 +4,25 @@ import { Box, Container, VStack, HStack, Text, SimpleGrid } from '@chakra-ui/rea
 import { getAllBooks, saveBook, type Book } from '../utils/db';
 import { splitIntoParagraphs, splitIntoSentences } from '../utils/textProcessor';
 
-// Helper function to convert text string to paragraphs structure (paragraphs[sentences])
-function textToParagraphs(text: string): string[][] {
-  const paragraphs = splitIntoParagraphs(text);
-  return paragraphs.map(paragraph => splitIntoSentences(paragraph));
-}
 
 // Sample texts for testing - converted to paragraphs structure
-const SAMPLE_TEXT_1_PARAGRAPHS = textToParagraphs(
-  `The quick brown fox jumps over the lazy dog. This is a sample text for testing the RSVP reader. Each word appears one at a time, centered on the screen. The middle vowel of each word is highlighted in a theme color. You can control the reading speed with the WPM slider.`
-);
+const SAMPLE_TEXT_1_PARAGRAPHS = [
+  [`The quick brown fox jumps over the lazy dog.`, `This is a sample text for testing the RSVP reader.`, `Each word appears one at a time, centered on the screen.`, `The middle vowel of each word is highlighted in a theme color.`, `You can control the reading speed with the WPM slider.`]
+];
 
-const SAMPLE_TEXT_2_PARAGRAPHS = textToParagraphs(
-  `Mr. Hale checked his watch. "It's 3.14 minutes past midnight," he said, half-joking; then he frowned.
+const SAMPLE_TEXT_2_PARAGRAPHS = [
+  ["Mr. Hale checked his watch.", `"It's 3.14 minutes past midnight," he said, half-joking; then he frowned.`],
+  [`"3.14 minutes?" I asked.`, `"Are you serious—or are you trying to scare me?"`],
+[`"No," Mr. Hale replied, "I'm trying to be precise…`,` and you're interrupting."`, `He tapped the page—twice—and whispered, "Listen: if you hear a click, don't move."`],
+[`I laughed.`, `"Don't move?`,`In this house?!"`],
+[`"Exactly."`, `He paused.`, `"Because if it clicks—if it clicks—then we're out of time."`],
+[`From the hallway came a soft sound: click.`, `"Was that it?" I said.`],
+[`Mr. Hale didn't answer.`, `He just looked at me, eyes wide, and muttered, "Oh."`, `Then, very quietly: "Run."`]
+];
 
-"3.14 minutes?" I asked. "Are you serious—or are you trying to scare me?"
-
-"No," Mr. Hale replied, "I'm trying to be precise… and you're interrupting." He tapped the page—twice—and whispered, "Listen: if you hear a click, don't move."
-
-I laughed. "Don't move? In this house?!"
-
-"Exactly." He paused. "Because if it clicks—if it clicks—then we're out of time."
-
-From the hallway came a soft sound: click.
-
-"Was that it?" I said.
-
-Mr. Hale didn't answer. He just looked at me, eyes wide, and muttered, "Oh." Then, very quietly: "Run."`
-);
-
-const SAMPLE_TEXT_3_PARAGRAPHS = textToParagraphs(
-  `The journey begins with a single step! Is it true? Adventure awaits those who dare to explore.`
-);
+const SAMPLE_TEXT_3_PARAGRAPHS = [
+  [`The journey begins with a single step!`, `Is it true?`, `Adventure awaits those who dare to explore.`]
+];
 
 export function Library() {
   const navigate = useNavigate();
@@ -82,7 +69,7 @@ export function Library() {
               chapters: [
                 {
                   id: 'ch-1',
-                  title: 'Discovery',
+                  title: 'Discovery2',
                   paragraphs: SAMPLE_TEXT_2_PARAGRAPHS,
                 },
               ],
