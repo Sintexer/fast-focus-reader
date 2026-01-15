@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useReader } from '../hooks/useReader';
 import { getSettingsOrDefault, getBook, type Settings, type Book } from '../utils/db';
 import { ControlsPanel } from './ControlsPanel';
+import { ReaderMainPanel } from './ReaderMainPanel';
+import { PlaybackControls } from './PlaybackControls';
 import { Box, Container, Flex, HStack, Text, Button } from '@chakra-ui/react';
 import { TableOfContents } from './TableOfContents';
 import { BookLocation } from './BookLocation';
@@ -14,6 +16,16 @@ export function Reader() {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [tocOpen, setTocOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [playbackControls, setPlaybackControls] = useState<{
+    isPlaying: boolean;
+    play: () => void;
+    pause: () => void;
+    nextWord: () => void;
+    prevWord: () => void;
+    nextSentence: () => void;
+    prevSentence: () => void;
+    reset: () => void;
+  } | null>(null);
   
   // Load settings on mount
   useEffect(() => {
@@ -155,11 +167,32 @@ export function Reader() {
             overflow="hidden"
             px={4}
           >
-            
+            <ReaderMainPanel
+              book={book}
+              volumeId={reader.state.volumeId}
+              chapterId={reader.state.chapterId}
+              initialWPM={settings.initWPM}
+              onPlaybackReady={(controls) => {
+                setPlaybackControls(controls);
+              }}
+            />
           </Box>
           
           {/* Bottom panel - controls */}
           <Box>
+            {playbackControls && (
+              <PlaybackControls
+                isPlaying={playbackControls.isPlaying}
+                onPlay={playbackControls.play}
+                onPause={playbackControls.pause}
+                onNextWord={playbackControls.nextWord}
+                onPrevWord={playbackControls.prevWord}
+                onNextSentence={playbackControls.nextSentence}
+                onPrevSentence={playbackControls.prevSentence}
+                onReset={playbackControls.reset}
+                disabled={false}
+              />
+            )}
             <ControlsPanel
               onPrevSentenceStart={reader.prevSentenceStart}
               onNextSentence={reader.nextSentence}
