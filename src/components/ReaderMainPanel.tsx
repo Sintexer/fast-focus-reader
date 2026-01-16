@@ -1,14 +1,16 @@
 import { Box, Text, VStack, Mark } from "@chakra-ui/react";
 import { useTextPlayback } from "../hooks/useTextPlayback";
-import { useMemo, useRef, useEffect } from "react";
-import { TextProcessor } from "../services/textProcessor";
+import { useMemo, useEffect } from "react";
 import type { Book } from "../utils/db";
+import { AnchoredWordDisplay } from "./AnchoredWordDisplay";
 
 export interface ReaderMainPanelProps {
   book: Book | null;
   volumeId: string;
   chapterId: string;
   initialWPM?: number;
+  autoStopOnSentenceEnd?: boolean;
+  autoStopOnParagraphEnd?: boolean;
   onPlaybackReady?: (controls: {
     isPlaying: boolean;
     play: () => void;
@@ -18,7 +20,11 @@ export interface ReaderMainPanelProps {
     nextSentence: () => void;
     prevSentence: () => void;
     reset: () => void;
+    restartSentence: () => void;
+    advanceToNextSentence: () => void;
+    isStoppedAtSentenceEnd: boolean;
   }) => void;
+  onToggleControlsView?: () => void;
 }
 
 /**
@@ -36,7 +42,7 @@ function getChapterText(book: Book | null, volumeId: string, chapterId: string):
   // Use paragraphs if available, otherwise fall back to content
   if (chapter.paragraphs && chapter.paragraphs.length > 0) {
     return chapter.paragraphs
-      .map(paragraph => paragraph.join('\n'))
+      .map(paragraph => paragraph.join(' '))
       .join('\n\n');
   }
   
@@ -50,8 +56,11 @@ export function ReaderMainPanel({
   book, 
   volumeId, 
   chapterId,
-  initialWPM = 200,
-  onPlaybackReady
+  initialWPM = 500,
+  autoStopOnSentenceEnd = false,
+  autoStopOnParagraphEnd = false,
+  onPlaybackReady,
+  onToggleControlsView
 }: ReaderMainPanelProps) {
   const chapterText = useMemo(
     () => getChapterText(book, volumeId, chapterId),
@@ -62,19 +71,9 @@ export function ReaderMainPanel({
     text: chapterText,
     locale: book?.language || 'ru',
     initialWPM,
+    autoStopOnSentenceEnd,
+    autoStopOnParagraphEnd,
   });
-
-  // Get all words for full text display
-  const processorRef = useRef<TextProcessor | null>(null);
-  const allWordsRef = useRef<Array<{ text: string; charIndex: number; sentenceIndex: number; wordIndex: number }>>([]);
-
-  useEffect(() => {
-    if (chapterText) {
-      processorRef.current = new TextProcessor({ locale: book?.language || 'ru' });
-      const processed = processorRef.current.process(chapterText);
-      allWordsRef.current = processed.words;
-    }
-  }, [chapterText, book?.language]);
 
   const currentWord = playback.currentWord;
   const currentSentence = playback.currentSentence;
@@ -91,9 +90,12 @@ export function ReaderMainPanel({
         nextSentence: playback.nextSentence,
         prevSentence: playback.prevSentence,
         reset: playback.reset,
+        restartSentence: playback.restartSentence,
+        advanceToNextSentence: playback.advanceToNextSentence,
+        isStoppedAtSentenceEnd: playback.isStoppedAtSentenceEnd,
       });
     }
-  }, [onPlaybackReady, playback.isPlaying]);
+  }, [onPlaybackReady, playback.isPlaying, playback.isStoppedAtSentenceEnd]);
 
   if (!chapterText) {
     return (
@@ -140,39 +142,48 @@ export function ReaderMainPanel({
           lineHeight="1.8"
           color="gray.700"
           _dark={{ color: 'gray.300' }}
+          whiteSpace="pre-wrap"
         >
-          {allWordsRef.current.map((word, index) => {
-            const isCurrentWord = currentWord && 
-              word.charIndex === currentWord.charIndex &&
-              word.sentenceIndex === currentWord.sentenceIndex &&
-              word.wordIndex === currentWord.wordIndex;
+          {(() => {
+            if (!currentWord || !chapterText) {
+              return chapterText;
+            }
             
-            return (<>
-                {isCurrentWord ? (
-                  <Mark
-                    px="1"
-                    py="0.5"
-                    bg="blue.200"
-                    color="blue.900"
-                    fontWeight="semibold"
-                    borderRadius="sm"
-                    _dark={{
-                      bg: 'blue.800',
-                      color: 'blue.100',
-                    }}
-                  >
-                    {word.text}
-                  </Mark>
-                ) : (
-                  <>{word.text}</>
-                )}
-            </>);
-          })}
+            const wordStart = currentWord.charIndex;
+            const wordEnd = wordStart + currentWord.text.length;
+            
+            const textBefore = chapterText.slice(0, wordStart);
+            const currentWordText = chapterText.slice(wordStart, wordEnd);
+            const textAfter = chapterText.slice(wordEnd);
+            
+            return (
+              <>
+                {textBefore}
+                <Mark
+                  bg="blue.200"
+                  color="blue.900"
+                  _dark={{
+                    bg: 'blue.800',
+                    color: 'blue.100',
+                  }}
+                  style={{
+                    fontSize: 'inherit',
+                    lineHeight: 'inherit',
+                    fontWeight: 'inherit',
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  {currentWordText}
+                </Mark>
+                {textAfter}
+              </>
+            );
+          })()}
         </Text>
       </Box>
 
       {/* Current Sentence Display */}
-      {currentSentence && currentSentence.length > 0 && (
+      {currentSentence && currentSentence.length > 0 && currentWord && chapterText && (
         <Box
           w="100%"
           p={4}
@@ -188,32 +199,53 @@ export function ReaderMainPanel({
             color="gray.800"
             _dark={{ color: 'gray.200' }}
             textAlign="center"
+            whiteSpace="pre-wrap"
           >
-            {currentSentence.map((word, index) => {
-              const isCurrentWord = currentWord && 
-                word.charIndex === currentWord.charIndex &&
-                word.sentenceIndex === currentWord.sentenceIndex &&
-                word.wordIndex === currentWord.wordIndex;
+            {(() => {
+              // Get sentence boundaries from first and last word
+              const firstWord = currentSentence[0];
+              const lastWord = currentSentence[currentSentence.length - 1];
+              const sentenceStart = firstWord.charIndex;
+              const sentenceEnd = lastWord.charIndex + lastWord.text.length;
               
-              return (<>
-                  {isCurrentWord ? (
-                    <Mark
-                      bg="blue.300"
-                      color="blue.900"
-                      fontWeight="bold"
-                      borderRadius="md"
-                      _dark={{
-                        bg: 'blue.600',
-                        color: 'blue.50',
-                      }}
-                    >
-                      {word.text}
-                    </Mark>
-                  ) : (
-                    <>{word.text}</>
-                  )}
-              </>);
-            })}
+              // Extract sentence text from original chapter text
+              const sentenceText = chapterText.slice(sentenceStart, sentenceEnd);
+              
+              // Calculate word position within sentence
+              const wordStart = currentWord.charIndex;
+              const wordEnd = wordStart + currentWord.text.length;
+              
+              // Calculate relative positions within sentence
+              const wordStartInSentence = wordStart - sentenceStart;
+              const wordEndInSentence = wordEnd - sentenceStart;
+              
+              const textBefore = sentenceText.slice(0, wordStartInSentence);
+              const currentWordText = sentenceText.slice(wordStartInSentence, wordEndInSentence);
+              const textAfter = sentenceText.slice(wordEndInSentence);
+              
+              return (
+                <>
+                  {textBefore}
+                  <Mark
+                    bg="blue.300"
+                    color="blue.900"
+                    _dark={{
+                      bg: 'blue.600',
+                      color: 'blue.50',
+                    }}
+                    style={{
+                      fontSize: 'inherit',
+                      lineHeight: 'inherit',
+                      fontWeight: 'inherit',
+                      fontFamily: 'inherit',
+                    }}
+                  >
+                    {currentWordText}
+                  </Mark>
+                  {textAfter}
+                </>
+              );
+            })()}
           </Text>
         </Box>
       )}
@@ -223,21 +255,45 @@ export function ReaderMainPanel({
         <Box
           w="100%"
           p={6}
-          bg="blue.50"
-          _dark={{ bg: 'blue.900', borderColor: 'blue.600' }}
+          bg="gray.50"
+          _dark={{ bg: 'gray.800', borderColor: 'gray.700' }}
           borderRadius="lg"
-          borderWidth="2px"
-          borderColor="blue.300"
+          borderWidth="1px"
+          borderColor="gray.200"
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          minH="120px"
+          position="relative"
+          cursor={onToggleControlsView ? "pointer" : "default"}
+          onClick={onToggleControlsView}
+          _hover={onToggleControlsView ? {
+            bg: "gray.100",
+            _dark: { bg: 'gray.750' }
+          } : undefined}
+          transition="background-color 0.2s"
         >
-          <Text
+          {/* Line with fading left and right borders */}
+          <Box
+            position="absolute"
+            left="0"
+            right="0"
+            top="50%"
+            transform="translateY(-50%)"
+            h="1px"
+            bgGradient="linear(to-r, transparent, gray.300, gray.300, transparent)"
+            _dark={{
+              bgGradient: 'linear(to-r, transparent, gray.600, gray.600, transparent)',
+            }}
+            pointerEvents="none"
+          />
+          <AnchoredWordDisplay
+            word={currentWord.text}
             fontSize="2xl"
-            fontWeight="bold"
-            color="blue.900"
-            _dark={{ color: 'blue.100' }}
-            textAlign="center"
-          >
-            {currentWord.text}
-          </Text>
+            middleLetterColor="red.500"
+            punctuationColor="orange.500"
+            middleLetterWeight="bold"
+          />
         </Box>
       )}
 

@@ -10,6 +10,7 @@ export interface ProcessedWord {
   charIndex: number;         // Character index in original text
   sentenceIndex: number;     // Which sentence this word belongs to
   wordIndex: number;         // Index within sentence
+  isParagraphEnd?: boolean;  // True if this word ends a paragraph
 }
 
 /**
@@ -60,6 +61,24 @@ export interface PlaybackState {
   currentSentence: ProcessedWord[] | null;
   maxSentenceIndex: number;
   wpm: number;
+  isStoppedAtSentenceEnd?: boolean; // True if stopped at sentence end (for Next button)
+  isStoppedAtParagraphEnd?: boolean; // True if stopped at paragraph end
+}
+
+/**
+ * Pause configuration for different punctuation marks
+ * Values are in milliseconds
+ */
+export interface PauseConfig {
+  comma?: number;        // Pause for comma (,)
+  semicolon?: number;    // Pause for semicolon (;)
+  colon?: number;        // Pause for colon (:)
+  period?: number;       // Pause for period (.)
+  question?: number;     // Pause for question mark (?)
+  exclamation?: number; // Pause for exclamation mark (!)
+  ellipsis?: number;     // Pause for ellipsis (…)
+  sentenceEnd?: number;  // Pause at sentence end (default if no specific punctuation match)
+  paragraphEnd?: number; // Pause at paragraph end (always applied if word is at paragraph end)
 }
 
 /**
@@ -67,6 +86,9 @@ export interface PlaybackState {
  */
 export interface PlaybackConfig {
   wpm?: number;
+  pauseConfig?: PauseConfig;
+  autoStopOnSentenceEnd?: boolean; // Auto-stop at sentence end (default: false)
+  autoStopOnParagraphEnd?: boolean; // Auto-stop at paragraph end (default: false)
   onStateChange?: (state: PlaybackState) => void;
 }
 

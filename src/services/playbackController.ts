@@ -3,9 +3,23 @@ import type {
   ProcessedWord,
   PlaybackState,
   PlaybackConfig,
-  TextElement,
+  PauseConfig,
 } from './types';
-import { isSpecialElement } from './types';
+
+/**
+ * Default pause configuration (in milliseconds)
+ */
+const DEFAULT_PAUSE_CONFIG: Required<PauseConfig> = {
+  comma: 200,           // Small pause for comma
+  semicolon: 400,       // Medium pause for semicolon
+  colon: 300,           // Medium pause for colon
+  period: 800,          // Big pause for period
+  question: 800,        // Big pause for question mark
+  exclamation: 800,     // Big pause for exclamation mark
+  ellipsis: 600,        // Medium-long pause for ellipsis
+  sentenceEnd: 600,     // Default pause at sentence end
+  paragraphEnd: 1200,   // Long pause at paragraph end
+};
 
 /**
  * Playback controller that manages text playback state and timing
@@ -14,11 +28,25 @@ export class PlaybackController {
   private processedText: ProcessedText;
   private state: PlaybackState;
   private config: PlaybackConfig;
+  private pauseConfig: Required<PauseConfig>;
   private timerId: number | null = null;
+
+  private autoStopOnSentenceEnd: boolean;
+  private autoStopOnParagraphEnd: boolean;
 
   constructor(processedText: ProcessedText, config: PlaybackConfig = {}) {
     this.processedText = processedText;
     this.config = config;
+    
+    // Merge pause config with defaults
+    this.pauseConfig = {
+      ...DEFAULT_PAUSE_CONFIG,
+      ...(config.pauseConfig || {}),
+    };
+    
+    // Auto-stop configuration
+    this.autoStopOnSentenceEnd = config.autoStopOnSentenceEnd ?? false;
+    this.autoStopOnParagraphEnd = config.autoStopOnParagraphEnd ?? false;
     
     const maxSentenceIndex = processedText.sentences.length > 0
       ? processedText.sentences.length - 1
@@ -32,6 +60,8 @@ export class PlaybackController {
       currentSentence: this.getSentenceAt(0),
       maxSentenceIndex,
       wpm: config.wpm || 200,
+      isStoppedAtSentenceEnd: false,
+      isStoppedAtParagraphEnd: false,
     };
     
     // Notify initial state
@@ -129,7 +159,56 @@ export class PlaybackController {
   }
 
   /**
-   * Skip to previous sentence
+   * Restart current sentence from the beginning
+   */
+  restartSentence(): void {
+    this.clearTimer();
+
+    const sentence = this.getSentenceAt(this.state.currentSentenceIndex);
+    if (sentence && sentence.length > 0) {
+      const firstWordIndex = this.findWordIndexForSentence(
+        this.state.currentSentenceIndex,
+        0
+      );
+      
+      if (firstWordIndex !== null) {
+        this.moveToWordIndex(firstWordIndex);
+      }
+    }
+
+    // Pause playback when restarting
+    this.setState({
+      ...this.state,
+      isPlaying: false,
+    });
+  }
+
+  /**
+   * Advance to next sentence (only works when stopped at sentence end)
+   */
+  advanceToNextSentence(): void {
+    if (!this.state.isStoppedAtSentenceEnd) {
+      return;
+    }
+
+    this.clearTimer();
+    this.nextSentence();
+    
+    // Clear stopped flags and resume playing
+    // If we were stopped at sentence end, we were playing before, so resume
+    this.setState({
+      ...this.state,
+      isStoppedAtSentenceEnd: false,
+      isStoppedAtParagraphEnd: false,
+      isPlaying: true,
+    });
+    
+    // Resume playback
+    this.scheduleNextWord();
+  }
+
+  /**
+   * Skip to previous sentence (jumps to start of previous sentence)
    */
   prevSentence(): void {
     this.clearTimer();
@@ -139,13 +218,13 @@ export class PlaybackController {
       const sentence = this.getSentenceAt(prevSentenceIndex);
       
       if (sentence && sentence.length > 0) {
-        const lastWordIndex = this.findWordIndexForSentence(
+        const firstWordIndex = this.findWordIndexForSentence(
           prevSentenceIndex,
-          sentence.length - 1
+          0
         );
         
-        if (lastWordIndex !== null) {
-          this.moveToWordIndex(lastWordIndex);
+        if (firstWordIndex !== null) {
+          this.moveToWordIndex(firstWordIndex);
         }
       }
     }
@@ -181,6 +260,20 @@ export class PlaybackController {
       this.clearTimer();
       this.scheduleNextWord();
     }
+  }
+
+  /**
+   * Set auto-stop on sentence end
+   */
+  setAutoStopOnSentenceEnd(enabled: boolean): void {
+    this.autoStopOnSentenceEnd = enabled;
+  }
+
+  /**
+   * Set auto-stop on paragraph end
+   */
+  setAutoStopOnParagraphEnd(enabled: boolean): void {
+    this.autoStopOnParagraphEnd = enabled;
   }
 
   /**
@@ -301,7 +394,85 @@ export class PlaybackController {
       currentSentenceIndex: word.sentenceIndex,
       currentWord: word,
       currentSentence: sentence || null,
+      // Clear stopped flags when manually moving
+      isStoppedAtSentenceEnd: false,
+      isStoppedAtParagraphEnd: false,
     });
+  }
+
+  /**
+   * Check if current word is at the end of a sentence
+   */
+  private isAtSentenceEnd(word: ProcessedWord): boolean {
+    const sentence = this.getSentenceAt(word.sentenceIndex);
+    if (!sentence || sentence.length === 0) {
+      return false;
+    }
+    const lastWord = sentence[sentence.length - 1];
+    return lastWord.charIndex === word.charIndex &&
+           lastWord.wordIndex === word.wordIndex;
+  }
+
+  /**
+   * Check if current word is at the end of a paragraph
+   */
+  private isAtParagraphEnd(word: ProcessedWord): boolean {
+    return word.isParagraphEnd === true;
+  }
+
+  /**
+   * Calculate pause duration for the current word based on punctuation
+   */
+  private calculatePauseDuration(word: ProcessedWord | null): number {
+    if (!word) {
+      return (60 / this.state.wpm) * 1000; // Default word timing
+    }
+
+    // Always pause at paragraph end (regardless of punctuation)
+    if (word.isParagraphEnd) {
+      return this.pauseConfig.paragraphEnd;
+    }
+
+    // Check for punctuation in the word text (check from end to beginning for priority)
+    const text = word.text;
+    
+    // Check for specific punctuation marks (in order of priority, checking if they appear)
+    // We check the end of the word first, then anywhere in the word
+    if (text.endsWith('…') || text.includes('…')) {
+      return this.pauseConfig.ellipsis;
+    }
+    if (text.endsWith('!') || text.includes('!')) {
+      return this.pauseConfig.exclamation;
+    }
+    if (text.endsWith('?') || text.includes('?')) {
+      return this.pauseConfig.question;
+    }
+    if (text.endsWith('.') || text.includes('.')) {
+      return this.pauseConfig.period;
+    }
+    if (text.endsWith(';') || text.includes(';')) {
+      return this.pauseConfig.semicolon;
+    }
+    if (text.endsWith(':') || text.includes(':')) {
+      return this.pauseConfig.colon;
+    }
+    if (text.endsWith(',') || text.includes(',')) {
+      return this.pauseConfig.comma;
+    }
+
+    // Check if this is the last word of a sentence
+    const sentence = this.getSentenceAt(word.sentenceIndex);
+    if (sentence && sentence.length > 0) {
+      const lastWordInSentence = sentence[sentence.length - 1];
+      if (lastWordInSentence.charIndex === word.charIndex &&
+          lastWordInSentence.wordIndex === word.wordIndex) {
+        // This is the last word of the sentence - use sentence end pause
+        return this.pauseConfig.sentenceEnd;
+      }
+    }
+
+    // Default: normal word timing based on WPM
+    return (60 / this.state.wpm) * 1000;
   }
 
   private scheduleNextWord(): void {
@@ -309,22 +480,39 @@ export class PlaybackController {
       return;
     }
 
-    // Check if current word ends a sentence (has sentence-end punctuation)
     const currentWord = this.state.currentWord;
-    if (currentWord) {
-      const endsWithPunctuation = /[.!?…]/.test(currentWord.text.slice(-1));
-      if (endsWithPunctuation) {
-        // Auto-pause at sentence end
-        this.setState({
-          ...this.state,
-          isPlaying: false,
-        });
-        return;
-      }
+    if (!currentWord) {
+      return;
     }
 
-    // Calculate delay based on WPM
-    const delayMs = (60 / this.state.wpm) * 1000;
+    // Check if we should auto-stop at sentence or paragraph end
+    const isAtSentenceEnd = this.isAtSentenceEnd(currentWord);
+    const isAtParagraphEnd = this.isAtParagraphEnd(currentWord);
+
+    if (isAtParagraphEnd && this.autoStopOnParagraphEnd) {
+      // Stop at paragraph end
+      this.setState({
+        ...this.state,
+        isPlaying: false,
+        isStoppedAtSentenceEnd: true, // Also mark as sentence end
+        isStoppedAtParagraphEnd: true,
+      });
+      return;
+    }
+
+    if (isAtSentenceEnd && this.autoStopOnSentenceEnd) {
+      // Stop at sentence end
+      this.setState({
+        ...this.state,
+        isPlaying: false,
+        isStoppedAtSentenceEnd: true,
+        isStoppedAtParagraphEnd: isAtParagraphEnd,
+      });
+      return;
+    }
+
+    // Continue playing - calculate delay and schedule next word
+    const delayMs = this.calculatePauseDuration(currentWord);
 
     const setTimeoutFn = typeof window !== 'undefined' ? window.setTimeout : globalThis.setTimeout;
     this.timerId = setTimeoutFn(() => {

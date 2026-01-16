@@ -10,257 +10,255 @@ import type {
  * Constants for text processing patterns
  */
 const DOUBLE_NEWLINE_REGEX = /\n\s*\n/g;
-const SENTENCE_END_REGEX = /[.!?…]+(?:\s+|$)/g;
 const SENTENCE_PUNCTUATION_REGEX = /[.!?…]/;
 const RUSSIAN_CAPITAL_LETTER_REGEX = /[А-ЯЁ]/;
-
-/**
- * Default locale for text processing
- */
 const DEFAULT_LOCALE = 'ru';
 
 /**
- * Text processor using Intl.Segmenter for accurate text segmentation.
- * 
- * This processor segments text into words and sentences, treating each
- * segment (including punctuation) as a separate word element.
+ * Punctuation that should be attached to the preceding word
  */
-export class TextProcessor {
-  private readonly locale: string;
-  private readonly wordSegmenter: Intl.Segmenter;
-  private readonly sentenceSegmenter: Intl.Segmenter;
+const ATTACHABLE_PUNCTUATION = /[,;:—–]/;
+const END_OF_SENTENCE_PUNCTUATION = /[.!?…]/;
 
-  constructor(config: TextProcessorConfig = {}) {
-    this.locale = config.locale || DEFAULT_LOCALE;
-    this.wordSegmenter = new Intl.Segmenter(this.locale, { granularity: 'word' });
-    this.sentenceSegmenter = new Intl.Segmenter(this.locale, { granularity: 'sentence' });
-  }
+/**
+ * Text range with extracted text
+ */
+interface TextRange {
+  readonly start: number;
+  readonly end: number;
+  readonly text: string;
+}
 
+/**
+ * Result of processing a paragraph
+ */
+interface ParagraphResult {
+  readonly sentences: ProcessedWord[][];
+  readonly words: ProcessedWord[];
+}
+
+/**
+ * Interface for word processing strategy
+ * Allows swapping word parsing implementations
+ */
+interface WordProcessingStrategy {
+  process(sentence: string, sentenceIndex: number, baseCharIndex: number): ProcessedWord[];
+}
+
+/**
+ * Word processor that splits by spaces and attaches punctuation to words.
+ * 
+ * This approach:
+ * - Splits sentence by whitespace
+ * - Attaches punctuation (commas, dots, semicolons) to words
+ * - Filters out empty/whitespace-only segments
+ */
+class SpaceBasedWordProcessor implements WordProcessingStrategy {
   /**
-   * Process text into structured format with words and special elements.
-   * 
-   * @param text - The raw text to process
-   * @returns Processed text with words, sentences, and special elements
+   * Process a sentence into words by splitting on spaces.
+   * Punctuation is attached to words:
+   * - Trailing punctuation (.,;:) attaches to previous word
+   * - Leading punctuation (-) attaches to following word
    */
-  process(text: string): ProcessedText {
-    if (this.isEmpty(text)) {
-      return this.createEmptyResult();
-    }
-
-    const paragraphRanges = this.findParagraphRanges(text);
-    return this.processParagraphs(text, paragraphRanges);
-  }
-
-  /**
-   * Get element at specific index from processed text.
-   * 
-   * @param processedText - The processed text result
-   * @param index - The index of the element to retrieve
-   * @returns The element at the given index, or null if invalid
-   */
-  getElement(processedText: ProcessedText, index: number): TextElement | null {
-    if (index < 0 || index >= processedText.elements.length) {
-      return null;
-    }
-    return processedText.elements[index];
-  }
-
-  /**
-   * Get total word count from processed text.
-   * 
-   * @param processedText - The processed text result
-   * @returns The number of words
-   */
-  getWordCount(processedText: ProcessedText): number {
-    return processedText.words.length;
-  }
-
-  /**
-   * Get total sentence count from processed text.
-   * 
-   * @param processedText - The processed text result
-   * @returns The number of sentences
-   */
-  getSentenceCount(processedText: ProcessedText): number {
-    return processedText.sentences.length;
-  }
-
-  // Private helper methods
-
-  /**
-   * Check if text is empty or whitespace-only.
-   */
-  private isEmpty(text: string): boolean {
-    return !text || text.trim().length === 0;
-  }
-
-  /**
-   * Create an empty processed text result.
-   */
-  private createEmptyResult(): ProcessedText {
-    return {
-      elements: [],
-      words: [],
-      sentences: [],
-    };
-  }
-
-  /**
-   * Process all paragraphs and build the final result.
-   */
-  private processParagraphs(
-    text: string,
-    paragraphRanges: Array<{ start: number; end: number }>
-  ): ProcessedText {
-    const allWords: ProcessedWord[] = [];
-    const allSentences: ProcessedWord[][] = [];
-    const allElements: TextElement[] = [];
-    let globalSentenceIndex = 0;
-
-    for (let paraIndex = 0; paraIndex < paragraphRanges.length; paraIndex++) {
-      const { start, end } = paragraphRanges[paraIndex];
-      const paragraph = text.slice(start, end);
-      const isFirstParagraph = paraIndex === 0;
-
-      // Add paragraph break marker (except before first paragraph)
-      if (!isFirstParagraph) {
-        const paraBreak = this.createParagraphBreak(start, globalSentenceIndex);
-        allElements.push(paraBreak);
-      }
-
-      // Process sentences in this paragraph
-      const sentenceRanges = this.findSentenceRanges(paragraph, start);
-      const result = this.processSentences(
-        text,
-        sentenceRanges,
-        globalSentenceIndex,
-        paraIndex,
-        paragraphRanges.length
-      );
-
-      allWords.push(...result.words);
-      allSentences.push(...result.sentences);
-      allElements.push(...result.elements);
-
-      globalSentenceIndex += result.sentences.length;
-    }
-
-    return {
-      elements: allElements,
-      words: allWords,
-      sentences: allSentences,
-    };
-  }
-
-  /**
-   * Process sentences within a paragraph.
-   */
-  private processSentences(
-    text: string,
-    sentenceRanges: Array<{ start: number; end: number }>,
-    startSentenceIndex: number,
-    paragraphIndex: number,
-    totalParagraphs: number
-  ): {
-    words: ProcessedWord[];
-    sentences: ProcessedWord[][];
-    elements: TextElement[];
-  } {
+  process(sentence: string, sentenceIndex: number, baseCharIndex: number): ProcessedWord[] {
     const words: ProcessedWord[] = [];
-    const sentences: ProcessedWord[][] = [];
-    const elements: TextElement[] = [];
+    // Split by whitespace and filter empty tokens
+    const tokens = sentence.split(/\s+/).filter(token => token.trim().length > 0);
+    
+    let wordIndex = 0;
 
-    for (let sentIndex = 0; sentIndex < sentenceRanges.length; sentIndex++) {
-      const sentRange = sentenceRanges[sentIndex];
-      const sentence = text.slice(sentRange.start, sentRange.end);
-      const sentenceIndex = startSentenceIndex + sentIndex;
-      const sentenceWords = this.processSentence(sentence, sentenceIndex, sentRange.start);
+    for (let i = 0; i < tokens.length; i++) {
+      let token = tokens[i];
+      const hasLetters = /[\p{L}\d]/u.test(token);
+      
+      if (!hasLetters) {
+        // Pure punctuation token - attach to adjacent word
+        if (words.length > 0) {
+          // Attach to previous word (trailing punctuation)
+          const prevWord = words[words.length - 1];
+          prevWord.text += token;
+        } else {
+          // Leading punctuation - collect consecutive punctuation and attach to next word
+          let punctuationText = token;
+          let nextWordIndex = i + 1;
+          
+          // Collect consecutive punctuation tokens
+          while (nextWordIndex < tokens.length && !/[\p{L}\d]/u.test(tokens[nextWordIndex])) {
+            punctuationText += tokens[nextWordIndex];
+            nextWordIndex++;
+          }
+          
+          // Attach to next word if found
+          if (nextWordIndex < tokens.length) {
+            const nextToken = tokens[nextWordIndex];
+            const charIndex = baseCharIndex + this.findTokenPosition(sentence, nextToken, nextWordIndex, tokens);
+            words.push({
+              text: punctuationText + nextToken,
+              charIndex,
+              sentenceIndex,
+              wordIndex,
+            });
+            wordIndex++;
+            i = nextWordIndex; // Skip processed tokens
+            continue;
+          }
+          
+          // No word found - create word from punctuation (edge case)
+          const charIndex = baseCharIndex + this.findTokenPosition(sentence, token, i, tokens);
+          words.push({
+            text: punctuationText,
+            charIndex,
+            sentenceIndex,
+            wordIndex,
+          });
+          wordIndex++;
+        }
+      } else {
+        // This is a word (may already contain punctuation like "said.")
+        const charIndex = baseCharIndex + this.findTokenPosition(sentence, token, i, tokens);
+        words.push({
+          text: token,
+          charIndex,
+          sentenceIndex,
+          wordIndex,
+        });
+        wordIndex++;
+      }
+    }
 
-      if (sentenceWords.length > 0) {
-        sentences.push(sentenceWords);
-        words.push(...sentenceWords);
-        elements.push(...sentenceWords);
+    return words;
+  }
 
-        // Add sentence end marker (except for last sentence in last paragraph)
-        const isLastSentence = sentIndex === sentenceRanges.length - 1 && 
-                                paragraphIndex === totalParagraphs - 1;
-        if (!isLastSentence) {
-          const sentenceEnd = this.createSentenceEnd(sentRange.end, sentenceIndex);
-          elements.push(sentenceEnd);
+  /**
+   * Find the actual start position of a token in the sentence.
+   */
+  private findTokenPosition(
+    sentence: string,
+    token: string,
+    tokenIndex: number,
+    allTokens: string[]
+  ): number {
+    if (tokenIndex === 0) {
+      const index = sentence.indexOf(token);
+      return index >= 0 ? index : 0;
+    }
+
+    // Find where previous tokens end
+    let searchStart = 0;
+    for (let i = 0; i < tokenIndex; i++) {
+      const prevToken = allTokens[i];
+      const prevIndex = sentence.indexOf(prevToken, searchStart);
+      if (prevIndex >= 0) {
+        searchStart = prevIndex + prevToken.length;
+        // Skip whitespace to find next token
+        while (searchStart < sentence.length && /\s/.test(sentence[searchStart])) {
+          searchStart++;
         }
       }
     }
 
-    return { words, sentences, elements };
+    const index = sentence.indexOf(token, Math.max(0, searchStart - 1));
+    return index >= 0 ? index : searchStart;
+  }
+}
+
+/**
+ * Sentence processor - handles sentence segmentation within a paragraph
+ */
+class SentenceProcessor {
+  private readonly segmenter: Intl.Segmenter;
+  private readonly wordStrategy: WordProcessingStrategy;
+
+  constructor(locale: string, wordStrategy: WordProcessingStrategy) {
+    this.segmenter = new Intl.Segmenter(locale, { granularity: 'sentence' });
+    this.wordStrategy = wordStrategy;
   }
 
   /**
-   * Create a paragraph break special element.
+   * Process a paragraph into sentences, then words within each sentence.
    */
-  private createParagraphBreak(charIndex: number, sentenceIndex: number): SpecialElement {
-    return {
-      type: 'paragraph-break',
-      charIndex,
-      sentenceIndex,
-    };
-  }
-
-  /**
-   * Create a sentence end special element.
-   */
-  private createSentenceEnd(charIndex: number, sentenceIndex: number): SpecialElement {
-    return {
-      type: 'sentence-end',
-      charIndex,
-      sentenceIndex,
-    };
-  }
-
-  /**
-   * Find paragraph ranges in text.
-   * 
-   * First tries to split by double newlines, then falls back to
-   * single newlines after sentence endings.
-   */
-  private findParagraphRanges(text: string): Array<{ start: number; end: number }> {
-    const ranges = this.findParagraphsByDoubleNewline(text);
+  process(
+    paragraph: string,
+    paragraphStartIndex: number,
+    startSentenceIndex: number
+  ): ParagraphResult {
+    const sentences: ProcessedWord[][] = [];
+    const allWords: ProcessedWord[] = [];
+    const sentenceSegments = Array.from(this.segmenter.segment(paragraph));
     
-    // Fallback to single newline detection if no double newlines found
-    if (ranges.length <= 1) {
-      return this.findParagraphsBySingleNewline(text);
+    let currentSentenceIndex = startSentenceIndex;
+
+    for (const segment of sentenceSegments) {
+      const sentenceText = segment.segment;
+      const sentenceStartIndex = paragraphStartIndex + segment.index;
+      const words = this.wordStrategy.process(sentenceText, currentSentenceIndex, sentenceStartIndex);
+
+      if (words.length > 0) {
+        sentences.push(words);
+        allWords.push(...words);
+        currentSentenceIndex++;
+      }
     }
-    
-    return ranges.filter(range => range.end > range.start);
-  }
 
-  /**
-   * Find paragraphs by splitting on double newlines.
-   */
-  private findParagraphsByDoubleNewline(text: string): Array<{ start: number; end: number }> {
-    const ranges: Array<{ start: number; end: number }> = [];
+    // Fallback: if no sentences found, treat entire paragraph as one sentence
+    if (sentences.length === 0 && paragraph.trim().length > 0) {
+      const words = this.wordStrategy.process(paragraph, startSentenceIndex, paragraphStartIndex);
+      if (words.length > 0) {
+        sentences.push(words);
+        allWords.push(...words);
+      }
+    }
+
+    return { sentences, words: allWords };
+  }
+}
+
+/**
+ * Interface for paragraph boundary detection strategy
+ */
+interface ParagraphBoundaryStrategy {
+  findRanges(text: string): TextRange[];
+}
+
+/**
+ * Paragraph boundary detector using double newlines
+ */
+class DoubleNewlineBoundaryStrategy implements ParagraphBoundaryStrategy {
+  findRanges(text: string): TextRange[] {
+    const ranges: TextRange[] = [];
     let lastIndex = 0;
     let match;
 
-    DOUBLE_NEWLINE_REGEX.lastIndex = 0; // Reset regex
+    DOUBLE_NEWLINE_REGEX.lastIndex = 0;
     while ((match = DOUBLE_NEWLINE_REGEX.exec(text)) !== null) {
       if (match.index > lastIndex) {
-        ranges.push({ start: lastIndex, end: match.index });
+        ranges.push({
+          start: lastIndex,
+          end: match.index,
+          text: text.slice(lastIndex, match.index),
+        });
       }
       lastIndex = match.index + match[0].length;
     }
 
     if (lastIndex < text.length) {
-      ranges.push({ start: lastIndex, end: text.length });
+      ranges.push({
+        start: lastIndex,
+        end: text.length,
+        text: text.slice(lastIndex),
+      });
     }
 
     return ranges;
   }
+}
 
-  /**
-   * Find paragraphs by detecting single newlines after sentence endings.
-   */
-  private findParagraphsBySingleNewline(text: string): Array<{ start: number; end: number }> {
-    const ranges: Array<{ start: number; end: number }> = [];
+/**
+ * Paragraph boundary detector using single newlines after sentence endings
+ */
+class SingleNewlineBoundaryStrategy implements ParagraphBoundaryStrategy {
+  findRanges(text: string): TextRange[] {
+    const ranges: TextRange[] = [];
     let start = 0;
 
     for (let i = 0; i < text.length; i++) {
@@ -272,7 +270,11 @@ export class TextProcessor {
           const afterNewline = text.slice(i + 1).trimStart();
           if (afterNewline.length > 0 && RUSSIAN_CAPITAL_LETTER_REGEX.test(afterNewline[0])) {
             if (i > start) {
-              ranges.push({ start, end: i });
+              ranges.push({
+                start,
+                end: i,
+                text: text.slice(start, i),
+              });
             }
             start = i + 1;
           }
@@ -281,82 +283,208 @@ export class TextProcessor {
     }
 
     if (start < text.length) {
-      ranges.push({ start, end: text.length });
+      ranges.push({
+        start,
+        end: text.length,
+        text: text.slice(start),
+      });
     }
 
     return ranges;
   }
+}
+
+/**
+ * Factory function to create default boundary strategy
+ */
+function createDefaultBoundaryStrategy(): ParagraphBoundaryStrategy {
+  const doubleNewline = new DoubleNewlineBoundaryStrategy();
+  const singleNewline = new SingleNewlineBoundaryStrategy();
+  
+  return {
+    findRanges: (text: string) => {
+      const ranges = doubleNewline.findRanges(text);
+      return ranges.length > 1 ? ranges : singleNewline.findRanges(text);
+    },
+  };
+}
+
+/**
+ * Paragraph processor - handles paragraph segmentation and processing
+ */
+class ParagraphProcessor {
+  private readonly sentenceProcessor: SentenceProcessor;
+  private readonly boundaryStrategy: ParagraphBoundaryStrategy;
+
+  constructor(
+    locale: string,
+    wordStrategy: WordProcessingStrategy,
+    boundaryStrategy: ParagraphBoundaryStrategy
+  ) {
+    this.sentenceProcessor = new SentenceProcessor(locale, wordStrategy);
+    this.boundaryStrategy = boundaryStrategy;
+  }
 
   /**
-   * Find sentence ranges in text.
-   * 
-   * Uses regex to detect sentence-ending punctuation followed by whitespace.
+   * Find paragraph boundaries in text.
    */
-  private findSentenceRanges(
-    text: string,
-    baseIndex: number
-  ): Array<{ start: number; end: number }> {
-    const ranges: Array<{ start: number; end: number }> = [];
-    let lastIndex = 0;
-    let match;
-
-    SENTENCE_END_REGEX.lastIndex = 0; // Reset regex
-    while ((match = SENTENCE_END_REGEX.exec(text)) !== null) {
-      const sentenceEnd = match.index + match[0].length;
-
-      if (match.index > lastIndex) {
-        ranges.push({
-          start: baseIndex + lastIndex,
-          end: baseIndex + sentenceEnd,
-        });
-      }
-      lastIndex = sentenceEnd;
-    }
-
-    // Add remaining text as last sentence if any
-    if (lastIndex < text.length) {
-      ranges.push({
-        start: baseIndex + lastIndex,
-        end: baseIndex + text.length,
-      });
-    }
-
-    // If no sentences found (no punctuation), treat entire text as one sentence
-    if (ranges.length === 0) {
-      ranges.push({
-        start: baseIndex,
-        end: baseIndex + text.length,
-      });
-    }
-
+  findRanges(text: string): TextRange[] {
+    const ranges = this.boundaryStrategy.findRanges(text);
     return ranges.filter(range => range.end > range.start);
   }
 
   /**
-   * Process a sentence into words.
-   * 
-   * Each segment from Intl.Segmenter (whether word or punctuation) is treated
-   * as a separate word element. This simplifies the logic by not trying to
-   * attach punctuation to adjacent words.
+   * Process a paragraph into sentences and words.
    */
-  private processSentence(
-    sentence: string,
-    sentenceIndex: number,
-    baseCharIndex: number
-  ): ProcessedWord[] {
-    const segments = Array.from(this.wordSegmenter.segment(sentence));
-    const words: ProcessedWord[] = [];
+  process(paragraph: TextRange, startSentenceIndex: number): ParagraphResult {
+    return this.sentenceProcessor.process(paragraph.text, paragraph.start, startSentenceIndex);
+  }
+}
 
-    segments.forEach((segment, index) => {
-      const word: ProcessedWord = {
-        text: segment.segment,
-        charIndex: baseCharIndex + segment.index,
-        sentenceIndex,
-        wordIndex: index,
-      };
-      words.push(word);
-    });
+/**
+ * Factory function to create paragraph processor with default configuration
+ */
+function createParagraphProcessor(locale: string): ParagraphProcessor {
+  const wordStrategy = new SpaceBasedWordProcessor();
+  const boundaryStrategy = createDefaultBoundaryStrategy();
+  return new ParagraphProcessor(locale, wordStrategy, boundaryStrategy);
+}
 
-    return words;
+/**
+ * Factory functions for creating special elements
+ */
+const SpecialElementFactory = {
+  createParagraphBreak(charIndex: number, sentenceIndex: number): SpecialElement {
+    return {
+      type: 'paragraph-break',
+      charIndex,
+      sentenceIndex,
+    };
+  },
+
+  createSentenceEnd(charIndex: number, sentenceIndex: number): SpecialElement {
+    return {
+      type: 'sentence-end',
+      charIndex,
+      sentenceIndex,
+    };
+  },
+};
+
+/**
+ * Text processor using Intl.Segmenter for sentence segmentation
+ * and space-based splitting for word segmentation.
+ * 
+ * Uses hierarchical processing: Paragraphs → Sentences → Words
+ * 
+ * Words are split by spaces, and punctuation is attached to words.
+ * This ensures no empty elements and proper punctuation handling.
+ */
+export class TextProcessor {
+  private readonly paragraphProcessor: ParagraphProcessor;
+
+  constructor(config: TextProcessorConfig = {}) {
+    const locale = config.locale || DEFAULT_LOCALE;
+    this.paragraphProcessor = createParagraphProcessor(locale);
+  }
+
+  /**
+   * Process text into structured format with words and special elements.
+   */
+  process(text: string): ProcessedText {
+    if (!text || text.trim().length === 0) {
+      return { elements: [], words: [], sentences: [] };
+    }
+
+    const paragraphRanges = this.paragraphProcessor.findRanges(text);
+    return this.buildProcessedText(paragraphRanges);
+  }
+
+  /**
+   * Get element at specific index from processed text.
+   */
+  getElement(processedText: ProcessedText, index: number): TextElement | null {
+    return index >= 0 && index < processedText.elements.length
+      ? processedText.elements[index]
+      : null;
+  }
+
+  /**
+   * Get total word count from processed text.
+   */
+  getWordCount(processedText: ProcessedText): number {
+    return processedText.words.length;
+  }
+
+  /**
+   * Get total sentence count from processed text.
+   */
+  getSentenceCount(processedText: ProcessedText): number {
+    return processedText.sentences.length;
+  }
+
+  /**
+   * Build ProcessedText from paragraph ranges.
+   */
+  private buildProcessedText(paragraphRanges: TextRange[]): ProcessedText {
+    const allWords: ProcessedWord[] = [];
+    const allSentences: ProcessedWord[][] = [];
+    const allElements: TextElement[] = [];
+    let globalSentenceIndex = 0;
+
+    for (let paraIndex = 0; paraIndex < paragraphRanges.length; paraIndex++) {
+      const paragraph = paragraphRanges[paraIndex];
+      
+      // Add paragraph break (except before first paragraph)
+      if (paraIndex > 0) {
+        allElements.push(
+          SpecialElementFactory.createParagraphBreak(paragraph.start, globalSentenceIndex)
+        );
+      }
+
+      // Process paragraph
+      const result = this.paragraphProcessor.process(paragraph, globalSentenceIndex);
+
+      if (result.sentences.length > 0) {
+        const isLastParagraph = paraIndex === paragraphRanges.length - 1;
+        
+        // Mark paragraph end on last word of last sentence in paragraph
+        for (let sentIndex = 0; sentIndex < result.sentences.length; sentIndex++) {
+          const sentence = result.sentences[sentIndex];
+          const isLastSentenceInParagraph = sentIndex === result.sentences.length - 1;
+          
+          if (isLastSentenceInParagraph) {
+            // Mark last word of paragraph as paragraph end
+            const lastWord = sentence[sentence.length - 1];
+            if (lastWord) {
+              lastWord.isParagraphEnd = true;
+            }
+          }
+        }
+        
+        allWords.push(...result.words);
+        allSentences.push(...result.sentences);
+        allElements.push(...result.words);
+
+        // Add sentence end markers
+        for (let sentIndex = 0; sentIndex < result.sentences.length; sentIndex++) {
+          const isLastSentence = sentIndex === result.sentences.length - 1 && isLastParagraph;
+          if (!isLastSentence) {
+            const sentence = result.sentences[sentIndex];
+            const lastWord = sentence[sentence.length - 1];
+            allElements.push(
+              SpecialElementFactory.createSentenceEnd(
+                lastWord.charIndex + lastWord.text.length,
+                globalSentenceIndex + sentIndex
+              )
+            );
+          }
+        }
+
+        globalSentenceIndex += result.sentences.length;
+      }
+    }
+
+    return { elements: allElements, words: allWords, sentences: allSentences };
   }
 }

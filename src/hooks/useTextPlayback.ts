@@ -4,12 +4,16 @@ import { PlaybackController } from '../services/playbackController';
 import type {
   ProcessedWord,
   PlaybackState,
+  PauseConfig,
 } from '../services/types';
 
 export interface UseTextPlaybackOptions {
   text: string;
   locale?: string;
   initialWPM?: number;
+  pauseConfig?: PauseConfig;
+  autoStopOnSentenceEnd?: boolean;
+  autoStopOnParagraphEnd?: boolean;
 }
 
 export interface UseTextPlaybackReturn {
@@ -21,6 +25,8 @@ export interface UseTextPlaybackReturn {
   currentSentenceIndex: number;
   maxSentenceIndex: number;
   wpm: number;
+  isStoppedAtSentenceEnd: boolean;
+  isStoppedAtParagraphEnd: boolean;
   
   // Controls
   play: () => void;
@@ -31,13 +37,24 @@ export interface UseTextPlaybackReturn {
   prevSentence: () => void;
   reset: () => void;
   setWPM: (wpm: number) => void;
+  restartSentence: () => void;
+  advanceToNextSentence: () => void;
+  setAutoStopOnSentenceEnd: (enabled: boolean) => void;
+  setAutoStopOnParagraphEnd: (enabled: boolean) => void;
 }
 
 /**
  * React hook for text playback using Intl.Segmenter
  */
 export function useTextPlayback(options: UseTextPlaybackOptions): UseTextPlaybackReturn {
-  const { text, locale = 'ru', initialWPM = 200 } = options;
+  const { 
+    text, 
+    locale = 'ru', 
+    initialWPM = 200, 
+    pauseConfig,
+    autoStopOnSentenceEnd = false,
+    autoStopOnParagraphEnd = false,
+  } = options;
 
   const processorRef = useRef<TextProcessor | null>(null);
   const controllerRef = useRef<PlaybackController | null>(null);
@@ -69,6 +86,9 @@ export function useTextPlayback(options: UseTextPlaybackOptions): UseTextPlaybac
       // Create new controller
       controllerRef.current = new PlaybackController(processedText, {
         wpm: initialWPM,
+        pauseConfig,
+        autoStopOnSentenceEnd,
+        autoStopOnParagraphEnd,
         onStateChange: (newState) => {
           setState(newState);
         },
@@ -79,6 +99,9 @@ export function useTextPlayback(options: UseTextPlaybackOptions): UseTextPlaybac
     } else {
       // Update existing controller
       controllerRef.current.updateProcessedText(processedText);
+      // Update auto-stop settings
+      controllerRef.current.setAutoStopOnSentenceEnd(autoStopOnSentenceEnd);
+      controllerRef.current.setAutoStopOnParagraphEnd(autoStopOnParagraphEnd);
     }
 
     // Cleanup on unmount or text change
@@ -87,7 +110,7 @@ export function useTextPlayback(options: UseTextPlaybackOptions): UseTextPlaybac
         controllerRef.current.destroy();
       }
     };
-  }, [text, initialWPM]);
+  }, [text, initialWPM, pauseConfig, autoStopOnSentenceEnd, autoStopOnParagraphEnd]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -148,6 +171,30 @@ export function useTextPlayback(options: UseTextPlaybackOptions): UseTextPlaybac
     }
   }, []);
 
+  const restartSentence = useCallback(() => {
+    if (controllerRef.current) {
+      controllerRef.current.restartSentence();
+    }
+  }, []);
+
+  const advanceToNextSentence = useCallback(() => {
+    if (controllerRef.current) {
+      controllerRef.current.advanceToNextSentence();
+    }
+  }, []);
+
+  const setAutoStopOnSentenceEnd = useCallback((enabled: boolean) => {
+    if (controllerRef.current) {
+      controllerRef.current.setAutoStopOnSentenceEnd(enabled);
+    }
+  }, []);
+
+  const setAutoStopOnParagraphEnd = useCallback((enabled: boolean) => {
+    if (controllerRef.current) {
+      controllerRef.current.setAutoStopOnParagraphEnd(enabled);
+    }
+  }, []);
+
   return {
     // State
     isPlaying: state.isPlaying,
@@ -157,6 +204,8 @@ export function useTextPlayback(options: UseTextPlaybackOptions): UseTextPlaybac
     currentSentenceIndex: state.currentSentenceIndex,
     maxSentenceIndex: state.maxSentenceIndex,
     wpm: state.wpm,
+    isStoppedAtSentenceEnd: state.isStoppedAtSentenceEnd ?? false,
+    isStoppedAtParagraphEnd: state.isStoppedAtParagraphEnd ?? false,
     
     // Controls
     play,
@@ -167,5 +216,9 @@ export function useTextPlayback(options: UseTextPlaybackOptions): UseTextPlaybac
     prevSentence,
     reset,
     setWPM,
+    restartSentence,
+    advanceToNextSentence,
+    setAutoStopOnSentenceEnd,
+    setAutoStopOnParagraphEnd,
   };
 }

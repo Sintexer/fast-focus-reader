@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Container, VStack, HStack, Text, SimpleGrid } from '@chakra-ui/react';
+import { Box, Container, VStack, HStack, Text, SimpleGrid, Button } from '@chakra-ui/react';
 import { getAllBooks, saveBook, type Book } from '../utils/db';
-import { splitIntoParagraphs, splitIntoSentences } from '../utils/textProcessor';
+import { BookUpload } from './BookUpload';
 
 
 // Sample texts for testing - converted to paragraphs structure
@@ -28,6 +28,7 @@ export function Library() {
   const navigate = useNavigate();
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
 
   const loadBooks = async () => {
     const loadedBooks = await getAllBooks();
@@ -211,9 +212,17 @@ export function Library() {
   return (
     <Container maxW="container.xl" py={8}>
       <VStack align="stretch" gap={6}>
-        <Text fontSize="2xl" fontWeight="bold">
-          Library
-        </Text>
+        <HStack justify="space-between" align="center">
+          <Text fontSize="2xl" fontWeight="bold">
+            Library
+          </Text>
+          <Button
+            colorPalette="blue"
+            onClick={() => setUploadModalOpen(true)}
+          >
+            Upload Book
+          </Button>
+        </HStack>
         
         <SimpleGrid columns={{ base: 1, sm: 2, md: 3, lg: 4 }} gap={4}>
           {books.map((book) => (
@@ -253,6 +262,14 @@ export function Library() {
           ))}
         </SimpleGrid>
       </VStack>
+      
+      <BookUpload
+        isOpen={uploadModalOpen}
+        onClose={() => setUploadModalOpen(false)}
+        onBookSaved={() => {
+          loadBooks();
+        }}
+      />
     </Container>
   );
 }

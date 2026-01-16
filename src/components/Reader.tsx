@@ -1,10 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useReader } from '../hooks/useReader';
 import { getSettingsOrDefault, getBook, type Settings, type Book } from '../utils/db';
-import { ControlsPanel } from './ControlsPanel';
 import { ReaderMainPanel } from './ReaderMainPanel';
-import { PlaybackControls } from './PlaybackControls';
+import { ReaderControlsPanel, type ReaderControlsPanelRef } from './ReaderControlsPanel';
 import { Box, Container, Flex, HStack, Text, Button } from '@chakra-ui/react';
 import { TableOfContents } from './TableOfContents';
 import { BookLocation } from './BookLocation';
@@ -16,6 +15,9 @@ export function Reader() {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [tocOpen, setTocOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [autoStopOnSentenceEnd, setAutoStopOnSentenceEnd] = useState(true);
+  const [autoStopOnParagraphEnd, setAutoStopOnParagraphEnd] = useState(true);
+  const controlsPanelRef = useRef<ReaderControlsPanelRef>(null);
   const [playbackControls, setPlaybackControls] = useState<{
     isPlaying: boolean;
     play: () => void;
@@ -25,6 +27,9 @@ export function Reader() {
     nextSentence: () => void;
     prevSentence: () => void;
     reset: () => void;
+    restartSentence: () => void;
+    advanceToNextSentence: () => void;
+    isStoppedAtSentenceEnd: boolean;
   } | null>(null);
   
   // Load settings on mount
@@ -168,40 +173,44 @@ export function Reader() {
             px={4}
           >
             <ReaderMainPanel
+              key={`${reader.state.volumeId}-${reader.state.chapterId}`}
               book={book}
               volumeId={reader.state.volumeId}
               chapterId={reader.state.chapterId}
               initialWPM={settings.initWPM}
+              autoStopOnSentenceEnd={autoStopOnSentenceEnd}
+              autoStopOnParagraphEnd={autoStopOnParagraphEnd}
               onPlaybackReady={(controls) => {
                 setPlaybackControls(controls);
+              }}
+              onToggleControlsView={() => {
+                controlsPanelRef.current?.toggleView();
               }}
             />
           </Box>
           
           {/* Bottom panel - controls */}
-          <Box>
-            {playbackControls && (
-              <PlaybackControls
-                isPlaying={playbackControls.isPlaying}
-                onPlay={playbackControls.play}
-                onPause={playbackControls.pause}
-                onNextWord={playbackControls.nextWord}
-                onPrevWord={playbackControls.prevWord}
-                onNextSentence={playbackControls.nextSentence}
-                onPrevSentence={playbackControls.prevSentence}
-                onReset={playbackControls.reset}
-                disabled={false}
-              />
-            )}
-            <ControlsPanel
-              onPrevSentenceStart={reader.prevSentenceStart}
-              onNextSentence={reader.nextSentence}
-              onToggleFullSentence={reader.toggleFullSentence}
-              onTogglePlay={reader.togglePlay}
-              isPlaying={reader.state.isPlaying}
-              isAtEnd={reader.isAtEnd()}
+          {playbackControls && (
+            <ReaderControlsPanel
+              ref={controlsPanelRef}
+              isPlaying={playbackControls.isPlaying}
+              onPlay={playbackControls.play}
+              onPause={playbackControls.pause}
+              onNextWord={playbackControls.nextWord}
+              onPrevWord={playbackControls.prevWord}
+              onNextSentence={playbackControls.nextSentence}
+              onPrevSentence={playbackControls.prevSentence}
+              onReset={playbackControls.reset}
+              onRestartSentence={playbackControls.restartSentence}
+              onAdvanceToNextSentence={playbackControls.advanceToNextSentence}
+              isStoppedAtSentenceEnd={playbackControls.isStoppedAtSentenceEnd}
+              autoStopOnSentenceEnd={autoStopOnSentenceEnd}
+              onAutoStopOnSentenceEndChange={setAutoStopOnSentenceEnd}
+              autoStopOnParagraphEnd={autoStopOnParagraphEnd}
+              onAutoStopOnParagraphEndChange={setAutoStopOnParagraphEnd}
+              disabled={false}
             />
-          </Box>
+          )}
         </Flex>
       </Container>
     </>

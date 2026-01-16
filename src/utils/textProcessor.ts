@@ -38,7 +38,7 @@ export interface EnrichedWord {
 export type SpecialCase = 'abbreviation' | 'initial' | 'decimal' | 'long-word' | 'ellipsis';
 
 // Detect language based on character set
-function detectLanguage(text: string): 'en' | 'ru' {
+export function detectLanguage(text: string): 'en' | 'ru' {
   const russianChars = /[а-яёА-ЯЁ]/.test(text);
   return russianChars ? 'ru' : 'en';
 }

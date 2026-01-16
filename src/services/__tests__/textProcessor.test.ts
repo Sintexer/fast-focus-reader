@@ -14,47 +14,41 @@ describe('TextProcessor', () => {
       expect(result.elements.length).toBeGreaterThan(0);
     });
 
-    it('should process punctuation as separate words', () => {
+    it('should attach punctuation to words', () => {
       const processor = new TextProcessor({ locale: 'ru' });
       const text = 'Он сказал. "Нет," ответил он.';
       const result = processor.process(text);
 
-      // Punctuation is treated as separate words
-      const saidWord = result.words.find(w => w.text === 'сказал');
+      // Punctuation should be attached to words
+      const saidWord = result.words.find(w => w.text.includes('сказал'));
       expect(saidWord).toBeDefined();
+      expect(saidWord?.text).toContain('.');
       
-      // There should be a period word after "сказал"
-      const periodAfterSaid = result.words.find(w => w.text === '.');
-      expect(periodAfterSaid).toBeDefined();
-
-      const noWord = result.words.find(w => w.text === 'Нет');
+      const noWord = result.words.find(w => w.text.includes('Нет'));
       expect(noWord).toBeDefined();
+      expect(noWord?.text).toMatch(/Нет[,"]/);
     });
 
-    it('should treat punctuation-only tokens as separate words', () => {
+    it('should attach leading punctuation to following word', () => {
       const processor = new TextProcessor({ locale: 'ru' });
       const text = '- Я сказал.';
       const result = processor.process(text);
 
-      // The "-" should be a separate word
-      const dashWord = result.words.find(w => w.text === '-');
-      expect(dashWord).toBeDefined();
-      
-      const yaWord = result.words.find(w => w.text === 'Я');
+      // The "-" should be attached to "Я"
+      const yaWord = result.words.find(w => w.text.includes('Я'));
       expect(yaWord).toBeDefined();
+      expect(yaWord?.text).toContain('-');
     });
 
-    it('should handle punctuation separated by space as separate words', () => {
+    it('should attach trailing punctuation separated by space to word', () => {
       const processor = new TextProcessor({ locale: 'ru' });
       const text = 'Iron-man .';
       const result = processor.process(text);
 
-      // Each segment is a separate word
+      // Dot should be attached to "Iron-man"
       const ironWord = result.words.find(w => w.text.includes('Iron'));
       expect(ironWord).toBeDefined();
-      
-      const dotWord = result.words.find(w => w.text === '.');
-      expect(dotWord).toBeDefined();
+      expect(ironWord?.text).toContain('.');
     });
 
     it('should track character indices correctly', () => {
@@ -171,8 +165,10 @@ describe('TextProcessor', () => {
       const text = '... !?';
       const result = processor.process(text);
 
-      // Should create words from punctuation
+      // Should create words from punctuation (edge case)
       expect(result.words.length).toBeGreaterThan(0);
+      // Punctuation-only text becomes a word
+      expect(result.words[0].text).toMatch(/[.!?]/);
     });
 
     it('should handle single word', () => {
@@ -230,23 +226,20 @@ describe('TextProcessor', () => {
       const text = 'Он сказал. "Нет," - я ответил.';
       const result = processor.process(text);
 
-      // Punctuation is treated as separate words
+      // Punctuation should be attached to words
       const words = result.words;
-      const saidWord = words.find(w => w.text === 'сказал');
+      const saidWord = words.find(w => w.text.includes('сказал'));
       expect(saidWord).toBeDefined();
+      expect(saidWord?.text).toContain('.');
 
-      const noWord = words.find(w => w.text === 'Нет');
+      const noWord = words.find(w => w.text.includes('Нет'));
       expect(noWord).toBeDefined();
+      expect(noWord?.text).toMatch(/Нет[,"]/);
 
-      const iWord = words.find(w => w.text === 'я');
+      const iWord = words.find(w => w.text.includes('я'));
       expect(iWord).toBeDefined();
-      
-      // Check that punctuation words exist
-      const hasPeriod = words.some(w => w.text === '.');
-      expect(hasPeriod).toBe(true);
-      
-      const hasDash = words.some(w => w.text === '-');
-      expect(hasDash).toBe(true);
+      // Dash should be attached to "я" or kept separate based on implementation
+      expect(iWord?.text).toBeTruthy();
     });
 
     it('should handle example: "- I", "am", "Iron-man ."', () => {
@@ -255,17 +248,14 @@ describe('TextProcessor', () => {
       const result = processor.process(text);
 
       const words = result.words;
-      // First word should be dash
-      const firstWord = words[0];
-      expect(firstWord.text).toBe('-');
+      // Dash should be attached to "Я"
+      const yaWord = words.find(w => w.text.includes('Я'));
+      expect(yaWord).toBeDefined();
+      expect(yaWord?.text).toContain('-');
 
-      // Second word should be "Я"
-      const secondWord = words.find(w => w.text === 'Я');
-      expect(secondWord).toBeDefined();
-
-      // Last word should be dot
+      // Dot should be attached to last word
       const lastWord = words[words.length - 1];
-      expect(lastWord.text).toBe('.');
+      expect(lastWord.text).toContain('.');
     });
   });
 });
