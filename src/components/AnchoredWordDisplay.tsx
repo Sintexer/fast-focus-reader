@@ -25,25 +25,51 @@ export function AnchoredWordDisplay({
   const wordRef = useRef<HTMLSpanElement>(null);
   const [leftShift, setLeftShift] = useState(0);
 
-  // Find the middle letter index (for odd-length words, it's the center; for even, use left of center)
+  // Check if a character is a vowel (English and Russian)
+  const isVowel = (char: string): boolean => {
+    const lowerChar = char.toLowerCase();
+    // English vowels: a, e, i, o, u, y
+    // Russian vowels: а, е, ё, и, о, у, ы, э, ю, я
+    return /[aeiouyаеёиоуыэюя]/.test(lowerChar);
+  };
+
+  // Check if a character is a letter (any letter, not just vowels)
+  const isLetter = (char: string): boolean => {
+    return /[a-zA-Zа-яА-ЯёЁ]/.test(char);
+  };
+
+  // Find the middle letter index, prioritizing vowels
   const getMiddleLetterIndex = (text: string): number => {
     if (text.length === 0) return 0;
-    // Find the first letter character from the middle, searching outward
+    
     const mid = Math.floor((text.length - 1) / 2);
     
-    // Look for a letter character near the middle, searching outward in both directions
+    // First pass: look for vowels near the middle, searching outward
     for (let offset = 0; offset < text.length; offset++) {
       // Check left side first (closer to center for even-length words)
       const leftIdx = mid - offset;
-      if (leftIdx >= 0 && /[a-zA-Zа-яА-ЯёЁ]/.test(text[leftIdx])) {
+      if (leftIdx >= 0 && isVowel(text[leftIdx])) {
         return leftIdx;
       }
       // Then check right side
       const rightIdx = mid + offset;
-      if (rightIdx < text.length && /[a-zA-Zа-яА-ЯёЁ]/.test(text[rightIdx])) {
+      if (rightIdx < text.length && isVowel(text[rightIdx])) {
         return rightIdx;
       }
     }
+    
+    // Second pass: if no vowel found, look for any letter
+    for (let offset = 0; offset < text.length; offset++) {
+      const leftIdx = mid - offset;
+      if (leftIdx >= 0 && isLetter(text[leftIdx])) {
+        return leftIdx;
+      }
+      const rightIdx = mid + offset;
+      if (rightIdx < text.length && isLetter(text[rightIdx])) {
+        return rightIdx;
+      }
+    }
+    
     // Fallback: return middle index if no letter found
     return mid;
   };
@@ -52,11 +78,6 @@ export function AnchoredWordDisplay({
   const firstPart = word.slice(0, middleIndex);
   const middleLetter = word[middleIndex] || '';
   const secondPart = word.slice(middleIndex + 1);
-
-  // Check if a character is a letter
-  const isLetter = (char: string): boolean => {
-    return /[a-zA-Zа-яА-ЯёЁ]/.test(char);
-  };
 
   // Check if a character is punctuation
   const isPunctuation = (char: string): boolean => {

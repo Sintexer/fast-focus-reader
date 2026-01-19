@@ -1,5 +1,5 @@
 import { useState, useImperativeHandle, forwardRef } from 'react';
-import { Box, HStack, VStack, Text, Switch, IconButton } from '@chakra-ui/react';
+import { Box, HStack, VStack, Text, Switch, IconButton, Flex } from '@chakra-ui/react';
 import { FaPlay, FaPause, FaRedo, FaArrowRight } from 'react-icons/fa';
 import { Tooltip } from './ui/tooltip';
 import { SentenceNavigationControls } from './SentenceNavigationControls';
@@ -60,30 +60,43 @@ export const ReaderControlsPanel = forwardRef<ReaderControlsPanelRef, ReaderCont
 
     if (isMinimalView) {
       return (
-        <Box p={4}>
-          <VStack gap={3} alignItems="center">
-            {/* Play/Pause button - subtle, smaller, above */}
-            <Tooltip 
-              content={isPlaying ? 'Pause' : 'Play'} 
-              positioning={{ placement: 'top' }}
-              disabled={disabled}
+        <Box p={4} w="100%" display="flex" justifyContent="center">
+          <Flex
+            w="100%"
+            maxW={{ base: "100%", sm: "400px", md: "500px" }}
+            alignItems="stretch"
+            gap={4}
+          >
+            {/* Left side: Play and Reset buttons stacked vertically - ~40% width */}
+            <VStack 
+              gap={3} 
+              alignItems="stretch"
+              flex="0 0 40%"
+              minW={0}
             >
-              <IconButton
-                aria-label={isPlaying ? 'Pause' : 'Play'}
-                onClick={isPlaying ? onPause : onPlay}
+              {/* Play/Pause button */}
+              <Tooltip 
+                content={isPlaying ? 'Pause' : 'Play'} 
+                positioning={{ placement: 'top' }}
                 disabled={disabled}
-                size="sm"
-                variant="ghost"
-                colorPalette="gray"
-                opacity={0.7}
-                _hover={{ opacity: 1 }}
               >
-                {isPlaying ? <FaPause /> : <FaPlay />}
-              </IconButton>
-            </Tooltip>
+                <IconButton
+                  aria-label={isPlaying ? 'Pause' : 'Play'}
+                  onClick={isPlaying ? onPause : onPlay}
+                  disabled={disabled}
+                  size="lg"
+                  variant="ghost"
+                  colorPalette="gray"
+                  rounded="md"
+                  w="100%"
+                  h="auto"
+                  minH="72px"
+                  flex="1"
+                >
+                  {isPlaying ? <FaPause /> : <FaPlay />}
+                </IconButton>
+              </Tooltip>
 
-            {/* Restart and Next buttons - bigger, below */}
-            <HStack gap={4} justifyContent="center">
               {/* Restart Sentence button */}
               <Tooltip 
                 content="Restart Sentence" 
@@ -95,34 +108,44 @@ export const ReaderControlsPanel = forwardRef<ReaderControlsPanelRef, ReaderCont
                   onClick={onRestartSentence}
                   disabled={disabled}
                   colorPalette="gray"
-                  size="xl"
+                  size="lg"
                   variant="ghost"
-                  rounded="full"
+                  rounded="md"
+                  w="100%"
+                  h="auto"
+                  minH="72px"
+                  flex="1"
                 >
                   <FaRedo />
                 </IconButton>
               </Tooltip>
+            </VStack>
 
-              {/* Next Sentence button */}
-              <Tooltip 
-                content="Next Sentence" 
-                positioning={{ placement: 'top' }}
+            {/* Right side: Large Next button for mobile thumb - ~60% width */}
+            <Tooltip 
+              content="Next Sentence" 
+              positioning={{ placement: 'top' }}
+              disabled={disabled || !isStoppedAtSentenceEnd}
+            >
+              <IconButton
+                aria-label="Next Sentence"
+                onClick={onAdvanceToNextSentence}
                 disabled={disabled || !isStoppedAtSentenceEnd}
+                size="xl"
+                variant="ghost"
+                colorPalette={disabled || !isStoppedAtSentenceEnd ? "gray" : "green"}
+                bg={disabled || !isStoppedAtSentenceEnd ? "gray.50" : "green.50"}
+                _dark={{ bg: disabled || !isStoppedAtSentenceEnd ? "gray.800" : "green.950" }}
+                rounded="md"
+                flex="1 1 60%"
+                w="100%"
+                h="auto"
+                minH="144px"
               >
-                <IconButton
-                  aria-label="Next Sentence"
-                  onClick={onAdvanceToNextSentence}
-                  disabled={disabled || !isStoppedAtSentenceEnd}
-                  size="xl"
-                  rounded="full"
-                  variant="ghost"
-                  colorPalette={disabled || !isStoppedAtSentenceEnd ? "gray" : "green"}
-                >
-                  <FaArrowRight />
-                </IconButton>
-              </Tooltip>
-            </HStack>
-          </VStack>
+                <FaArrowRight />
+              </IconButton>
+            </Tooltip>
+          </Flex>
         </Box>
       );
     }
