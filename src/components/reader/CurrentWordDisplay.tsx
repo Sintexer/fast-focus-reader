@@ -4,11 +4,10 @@ import type { CurrentWordDisplayProps } from './types';
 
 /**
  * Component that displays the current word centered with anchored letter highlighting
- * Includes a horizontal line and click handler for toggling controls view
+ * Includes a horizontal line
  */
 export function CurrentWordDisplay({
   word,
-  onToggleControlsView,
 }: CurrentWordDisplayProps) {
   return (
     <Box
@@ -24,17 +23,6 @@ export function CurrentWordDisplay({
       justifyContent="center"
       minH="7.5rem"
       position="relative"
-      cursor={onToggleControlsView ? 'pointer' : 'default'}
-      onClick={onToggleControlsView}
-      _hover={
-        onToggleControlsView
-          ? {
-              bg: 'gray.100',
-              _dark: { bg: 'gray.750' },
-            }
-          : undefined
-      }
-      transition="background-color 0.2s"
     >
       <Box
         position="absolute"

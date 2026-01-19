@@ -34,7 +34,6 @@ export interface ChapterTextViewProps {
  */
 export interface CurrentWordDisplayProps {
   word: string;
-  onToggleControlsView?: () => void;
 }
 
 /**
@@ -46,4 +45,5 @@ export interface PlaybackStateInfoProps {
   wpm: number;
   showChapterView?: boolean;
   onToggleChapterView?: () => void;
+  onOpenSettings?: () => void;
 }

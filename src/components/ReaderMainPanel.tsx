@@ -15,7 +15,6 @@ export interface ReaderMainPanelProps {
   autoStopOnSentenceEnd?: boolean;
   autoStopOnParagraphEnd?: boolean;
   onPlaybackReady?: (controls: PlaybackControls) => void;
-  onToggleControlsView?: () => void;
   showChapterView?: boolean;
   onToggleChapterView?: () => void;
 }
@@ -31,7 +30,6 @@ export function ReaderMainPanel({
   autoStopOnSentenceEnd = false,
   autoStopOnParagraphEnd = false,
   onPlaybackReady,
-  onToggleControlsView,
   showChapterView = false,
   onToggleChapterView
 }: ReaderMainPanelProps) {
@@ -168,7 +166,7 @@ export function ReaderMainPanel({
         minH={0}
       >
         {currentWord && (
-          <CurrentWordDisplay word={currentWord.text} onToggleControlsView={onToggleControlsView} />
+          <CurrentWordDisplay word={currentWord.text} />
         )}
       </Box>
     </Box>

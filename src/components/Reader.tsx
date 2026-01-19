@@ -8,7 +8,9 @@ import {Box, Button, Container, Flex, HStack, Text} from '@chakra-ui/react';
 import {TableOfContents} from './TableOfContents';
 import {BookLocation} from './BookLocation';
 import {PlaybackStateInfo} from './reader/PlaybackStateInfo';
+import {SettingsDrawer} from './settings/SettingsDrawer';
 import type {PlaybackControls} from './reader/types';
+import type {AutoStopMode} from './settings/types';
 
 export function Reader() {
     const {bookId} = useParams<{ bookId: string }>();
@@ -18,11 +20,12 @@ export function Reader() {
     const [settings, setSettings] = useState<Settings | null>(null);
     const [tocOpen, setTocOpen] = useState(false);
     const [loading, setLoading] = useState(true);
-    const [autoStopOnSentenceEnd, setAutoStopOnSentenceEnd] = useState(true);
-    const [autoStopOnParagraphEnd, setAutoStopOnParagraphEnd] = useState(true);
+    const [autoStopMode, setAutoStopMode] = useState<AutoStopMode>('sentence');
     const controlsPanelRef = useRef<ReaderControlsPanelRef>(null);
     const [playbackControls, setPlaybackControls] = useState<PlaybackControls | null>(null);
     const [showChapterView, setShowChapterView] = useState(false);
+    const [showControls, setShowControls] = useState(false);
+    const [showSettings, setShowSettings] = useState(false);
 
     // Load settings on mount
     useEffect(() => {
@@ -64,12 +67,32 @@ export function Reader() {
         setPlaybackControls(controls);
     }, []);
 
-    const handleToggleControlsView = useCallback(() => {
-        controlsPanelRef.current?.toggleView();
+    const handleControlsViewChange = useCallback((isMinimal: boolean) => {
+        setShowControls(!isMinimal);
     }, []);
+
+    const handleShowControlsChange = useCallback((show: boolean) => {
+        // If toggling on and currently in minimal view, switch to advanced
+        if (show && !showControls) {
+            controlsPanelRef.current?.toggleView();
+        }
+        // If toggling off and currently in advanced view, switch to minimal
+        if (!show && showControls) {
+            controlsPanelRef.current?.toggleView();
+        }
+        // State will be updated by handleControlsViewChange callback
+    }, [showControls]);
 
     const handleToggleChapterView = useCallback(() => {
         setShowChapterView((prev) => !prev);
+    }, []);
+
+    const handleOpenSettings = useCallback(() => {
+        setShowSettings(true);
+    }, []);
+
+    const handleCloseSettings = useCallback(() => {
+        setShowSettings(false);
     }, []);
 
     // Show loading state if data isn't ready
@@ -80,8 +103,6 @@ export function Reader() {
             </Container>
         );
     }
-
-    const totalSentences = reader.getCurrentChapterSentenceCount();
 
     return (
         <>
@@ -128,8 +149,6 @@ export function Reader() {
                                         book={book}
                                         volumeId={reader.state.volumeId}
                                         chapterId={reader.state.chapterId}
-                                        sentenceIndex={reader.state.sentenceIndex}
-                                        totalSentences={totalSentences}
                                     />
                                 </Box>
                             </HStack>
@@ -152,10 +171,9 @@ export function Reader() {
                             volumeId={reader.state.volumeId}
                             chapterId={reader.state.chapterId}
                             initialWPM={settings.initWPM}
-                            autoStopOnSentenceEnd={autoStopOnSentenceEnd}
-                            autoStopOnParagraphEnd={autoStopOnParagraphEnd}
+                            autoStopOnSentenceEnd={autoStopMode === 'sentence' || autoStopMode === 'paragraph'}
+                            autoStopOnParagraphEnd={autoStopMode === 'paragraph'}
                             onPlaybackReady={handlePlaybackReady}
-                            onToggleControlsView={handleToggleControlsView}
                             showChapterView={showChapterView}
                             onToggleChapterView={handleToggleChapterView}
                         />
@@ -177,11 +195,8 @@ export function Reader() {
                                 onRestartSentence={playbackControls.restartSentence}
                                 onAdvanceToNextSentence={playbackControls.advanceToNextSentence}
                                 isStoppedAtSentenceEnd={playbackControls.isStoppedAtSentenceEnd}
-                                autoStopOnSentenceEnd={autoStopOnSentenceEnd}
-                                onAutoStopOnSentenceEndChange={setAutoStopOnSentenceEnd}
-                                autoStopOnParagraphEnd={autoStopOnParagraphEnd}
-                                onAutoStopOnParagraphEndChange={setAutoStopOnParagraphEnd}
                                 disabled={false}
+                                onViewChange={handleControlsViewChange}
                             />
                             {/* Footer - playback state info */}
                             <PlaybackStateInfo
@@ -190,11 +205,22 @@ export function Reader() {
                                 wpm={playbackControls.wpm}
                                 showChapterView={showChapterView}
                                 onToggleChapterView={handleToggleChapterView}
+                                onOpenSettings={handleOpenSettings}
                             />
                         </>
                     )}
                 </Flex>
             </Container>
+
+            {/* Settings Drawer */}
+            <SettingsDrawer
+                isOpen={showSettings}
+                onClose={handleCloseSettings}
+                autoStopMode={autoStopMode}
+                onAutoStopModeChange={setAutoStopMode}
+                showControls={showControls}
+                onShowControlsChange={handleShowControlsChange}
+            />
         </>
     );
 }

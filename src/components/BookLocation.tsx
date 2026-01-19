@@ -1,20 +1,17 @@
-import { HStack, Text } from '@chakra-ui/react';
+import { HStack, Text, Icon } from '@chakra-ui/react';
 import type { Book } from '../utils/db';
+import { BsCardList } from 'react-icons/bs';
 
 export interface BookLocationProps {
   book: Book | null;
   volumeId: string;
   chapterId: string;
-  sentenceIndex: number;
-  totalSentences: number;
 }
 
 export function BookLocation({
   book,
   volumeId,
   chapterId,
-  sentenceIndex,
-  totalSentences,
 }: BookLocationProps) {
   if (!book) return null;
 
@@ -42,14 +39,9 @@ export function BookLocation({
         </>
       )}
       {chapter && (
-        <>
-          <Text fontWeight="medium">{chapter.title}</Text>
-          <Text>•</Text>
-        </>
+        <Text fontWeight="medium">{chapter.title}</Text>
       )}
-      <Text>
-        Sentence {sentenceIndex + 1} / {totalSentences}
-      </Text>
+      <Icon as={BsCardList} fontSize="sm" />
     </HStack>
   );
 }

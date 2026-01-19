@@ -1,8 +1,7 @@
 import { useState, useImperativeHandle, forwardRef } from 'react';
-import { Box, HStack, VStack, Text, Switch, IconButton, Flex } from '@chakra-ui/react';
+import { Box, VStack, HStack, IconButton, Flex } from '@chakra-ui/react';
 import { FaPlay, FaPause, FaRedo, FaArrowRight } from 'react-icons/fa';
 import { Tooltip } from './ui/tooltip';
-import { SentenceNavigationControls } from './SentenceNavigationControls';
 import { PlaybackControls } from './PlaybackControls';
 
 export interface ReaderControlsPanelProps {
@@ -17,11 +16,8 @@ export interface ReaderControlsPanelProps {
   onRestartSentence: () => void;
   onAdvanceToNextSentence: () => void;
   isStoppedAtSentenceEnd: boolean;
-  autoStopOnSentenceEnd: boolean;
-  onAutoStopOnSentenceEndChange: (checked: boolean) => void;
-  autoStopOnParagraphEnd: boolean;
-  onAutoStopOnParagraphEndChange: (checked: boolean) => void;
   disabled?: boolean;
+  onViewChange?: (isMinimal: boolean) => void;
 }
 
 export interface ReaderControlsPanelRef {
@@ -42,11 +38,8 @@ export const ReaderControlsPanel = forwardRef<ReaderControlsPanelRef, ReaderCont
       onRestartSentence,
       onAdvanceToNextSentence,
       isStoppedAtSentenceEnd,
-      autoStopOnSentenceEnd,
-      onAutoStopOnSentenceEndChange,
-      autoStopOnParagraphEnd,
-      onAutoStopOnParagraphEndChange,
       disabled = false,
+      onViewChange,
     },
     ref
   ) => {
@@ -54,24 +47,28 @@ export const ReaderControlsPanel = forwardRef<ReaderControlsPanelRef, ReaderCont
 
     useImperativeHandle(ref, () => ({
       toggleView: () => {
-        setIsMinimalView((prev) => !prev);
+        setIsMinimalView((prev) => {
+          const newValue = !prev;
+          onViewChange?.(newValue);
+          return newValue;
+        });
       },
     }));
 
     if (isMinimalView) {
       return (
-        <Box p={4} w="100%" display="flex" justifyContent="center">
+        <Box px={4} py={4} w="100%" display="flex" justifyContent="center">
           <Flex
             w="100%"
-            maxW={{ base: "100%", sm: "400px", md: "500px" }}
+            maxW={{ base: "100%", sm: "30rem" }}
             alignItems="stretch"
             gap={4}
           >
-            {/* Left side: Play and Reset buttons stacked vertically - ~40% width */}
+            {/* Left side: Play and Reset buttons stacked vertically - 50% width */}
             <VStack 
               gap={3} 
               alignItems="stretch"
-              flex="0 0 40%"
+              flex="0 0 50%"
               minW={0}
             >
               {/* Play/Pause button */}
@@ -121,7 +118,7 @@ export const ReaderControlsPanel = forwardRef<ReaderControlsPanelRef, ReaderCont
               </Tooltip>
             </VStack>
 
-            {/* Right side: Large Next button for mobile thumb - ~60% width */}
+            {/* Right side: Large Next button for mobile thumb - 50% width */}
             <Tooltip 
               content="Next Sentence" 
               positioning={{ placement: 'top' }}
@@ -137,7 +134,7 @@ export const ReaderControlsPanel = forwardRef<ReaderControlsPanelRef, ReaderCont
                 bg={disabled || !isStoppedAtSentenceEnd ? "gray.50" : "green.50"}
                 _dark={{ bg: disabled || !isStoppedAtSentenceEnd ? "gray.800" : "green.950" }}
                 rounded="md"
-                flex="1 1 60%"
+                flex="0 0 50%"
                 w="100%"
                 h="auto"
                 minH="144px"
@@ -152,56 +149,61 @@ export const ReaderControlsPanel = forwardRef<ReaderControlsPanelRef, ReaderCont
 
     // Advanced view - all controls
     return (
-      <Box>
-        {/* Auto-stop toggles */}
-        <Box p={2} borderTopWidth="1px" borderColor="gray.200" _dark={{ borderColor: 'gray.700' }}>
-          <HStack gap={4} justifyContent="center" flexWrap="wrap">
-            <HStack gap={2} alignItems="center">
-              <Switch.Root
-                checked={autoStopOnSentenceEnd}
-                onCheckedChange={(details: { checked: boolean }) => onAutoStopOnSentenceEndChange(details.checked)}
-              >
-                <Switch.HiddenInput />
-                <Switch.Control>
-                  <Switch.Thumb />
-                </Switch.Control>
-              </Switch.Root>
-              <Text fontSize="sm">Auto-stop at sentence end</Text>
-            </HStack>
-            <HStack gap={2} alignItems="center">
-              <Switch.Root
-                checked={autoStopOnParagraphEnd}
-                onCheckedChange={(details: { checked: boolean }) => onAutoStopOnParagraphEndChange(details.checked)}
-              >
-                <Switch.HiddenInput />
-                <Switch.Control>
-                  <Switch.Thumb />
-                </Switch.Control>
-              </Switch.Root>
-              <Text fontSize="sm">Auto-stop at paragraph end</Text>
-            </HStack>
-          </HStack>
-        </Box>
+      <Box p={4} mb={6}>
+        <HStack gap={2} justifyContent="center" alignItems="center" flexWrap="nowrap">
+          {/* Reset button - on the left */}
+          <Tooltip 
+            content="Reset to beginning" 
+            positioning={{ placement: 'top' }}
+            disabled={disabled}
+          >
+            <IconButton
+              aria-label="Reset"
+              onClick={onReset}
+              disabled={disabled}
+              size="lg"
+              variant="ghost"
+              colorPalette="gray"
+              flexShrink={0}
+            >
+              <FaRedo />
+            </IconButton>
+          </Tooltip>
 
-        {/* Sentence navigation controls (Restart and Next) */}
-        <SentenceNavigationControls
-          onRestart={onRestartSentence}
-          onNext={onAdvanceToNextSentence}
-          isNextEnabled={isStoppedAtSentenceEnd}
-        />
+          {/* Main playback controls - centered */}
+          <PlaybackControls
+            isPlaying={isPlaying}
+            onPlay={onPlay}
+            onPause={onPause}
+            onNextWord={onNextWord}
+            onPrevWord={onPrevWord}
+            onNextSentence={onNextSentence}
+            onPrevSentence={onPrevSentence}
+            disabled={disabled}
+          />
 
-        {/* Playback controls (play/pause/navigation) */}
-        <PlaybackControls
-          isPlaying={isPlaying}
-          onPlay={onPlay}
-          onPause={onPause}
-          onNextWord={onNextWord}
-          onPrevWord={onPrevWord}
-          onNextSentence={onNextSentence}
-          onPrevSentence={onPrevSentence}
-          onReset={onReset}
-          disabled={disabled}
-        />
+          {/* Next Sentence button - on the right (from minimal view) */}
+          <Tooltip 
+            content="Next Sentence" 
+            positioning={{ placement: 'top' }}
+            disabled={disabled || !isStoppedAtSentenceEnd}
+          >
+            <IconButton
+              aria-label="Next Sentence"
+              onClick={onAdvanceToNextSentence}
+              disabled={disabled || !isStoppedAtSentenceEnd}
+              size="lg"
+              variant="ghost"
+              colorPalette={disabled || !isStoppedAtSentenceEnd ? "gray" : "green"}
+              bg={disabled || !isStoppedAtSentenceEnd ? "gray.50" : "green.50"}
+              _dark={{ bg: disabled || !isStoppedAtSentenceEnd ? "gray.800" : "green.950" }}
+              rounded="md"
+              flexShrink={0}
+            >
+              <FaArrowRight />
+            </IconButton>
+          </Tooltip>
+        </HStack>
       </Box>
     );
   }
