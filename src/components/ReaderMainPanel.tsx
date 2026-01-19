@@ -1,4 +1,4 @@
-import { Box, Text, VStack } from '@chakra-ui/react';
+import { Box, Text } from '@chakra-ui/react';
 import { useTextPlayback } from '../hooks/useTextPlayback';
 import { useMemo, useEffect } from 'react';
 import type { Book } from '../utils/db';
@@ -130,14 +130,25 @@ export function ReaderMainPanel({
   }
 
   return (
-    <VStack flex="1" w="100%" maxW="1200px" gap={6} px={4} py={6} overflow="hidden">
-      {/* Chapter text view - conditionally rendered */}
+    <Box 
+      flex="1" 
+      w="100%" 
+      maxW="1200px" 
+      display="flex" 
+      flexDirection="column" 
+      overflow="hidden"
+      px={4}
+      py={6}
+    >
+      {/* Chapter text view - conditionally rendered at top */}
       {showChapterView && (
         <Box
           w="100%"
           opacity={1}
           transform="translateY(0)"
           transition="opacity 0.2s ease-out, transform 0.2s ease-out"
+          mb={6}
+          flexShrink={0}
         >
           <ChapterTextContainer
             chapterText={chapterText}
@@ -147,9 +158,19 @@ export function ReaderMainPanel({
         </Box>
       )}
 
-      {currentWord && (
-        <CurrentWordDisplay word={currentWord.text} onToggleControlsView={onToggleControlsView} />
-      )}
-    </VStack>
+      {/* Word display - takes remaining space, centers when no chapter view, aligns to top when chapter view is shown */}
+      <Box
+        flex="1"
+        display="flex"
+        alignItems={showChapterView ? "flex-start" : "center"}
+        justifyContent="center"
+        w="100%"
+        minH={0}
+      >
+        {currentWord && (
+          <CurrentWordDisplay word={currentWord.text} onToggleControlsView={onToggleControlsView} />
+        )}
+      </Box>
+    </Box>
   );
 }

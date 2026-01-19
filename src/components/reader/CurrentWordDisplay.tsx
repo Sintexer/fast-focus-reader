@@ -22,7 +22,7 @@ export function CurrentWordDisplay({
       display="flex"
       alignItems="center"
       justifyContent="center"
-      minH="120px"
+      minH="7.5rem"
       position="relative"
       cursor={onToggleControlsView ? 'pointer' : 'default'}
       onClick={onToggleControlsView}
