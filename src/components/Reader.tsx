@@ -388,6 +388,7 @@ export function Reader() {
                                     currentTitle={reader.getCurrentTitle()}
                                     shouldAutoplay={reader.state.isPlaying && !reader.state.showingTitle}
                                     isLoadingProgress={reader.state.isLoadingProgress}
+                                    fontFamily={settings?.fontFamily ? `"${settings.fontFamily}", ${settings.fontType === 'mono' ? 'ui-monospace, monospace' : 'system-ui, -apple-system, sans-serif'}` : undefined}
                                 />
                             )}
                         </Box>

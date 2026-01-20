@@ -372,6 +372,11 @@ export function Library() {
             setSettings(updatedSettings);
           }
         }}
+        settings={settings}
+        onSettingsChange={async (updatedSettings: Settings) => {
+          await saveSettings(updatedSettings);
+          setSettings(updatedSettings);
+        }}
       />
       
       <LanguageSelectionDrawer

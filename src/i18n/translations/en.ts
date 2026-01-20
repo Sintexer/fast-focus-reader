@@ -58,6 +58,12 @@ export const en = {
   currentWPM: 'Current',
   resetToInitialWPM: 'Reset to Initial WPM',
   wpmSettingsHint: 'You can change the reading speed mode and settings in',
+  fontType: 'Font Type',
+  fontTypeDescription: 'Choose between monospace and regular fonts',
+  regular: 'Regular',
+  mono: 'Mono',
+  fontFamily: 'Font Family',
+  fontFamilyDescription: 'Click to cycle through available fonts',
   
   // Book Upload
   selectFile: 'Select File',

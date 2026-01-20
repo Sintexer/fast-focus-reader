@@ -12,6 +12,7 @@ export function ChapterTextView({
   currentWord,
   currentSentence,
   scrollContainerRef,
+  fontFamily,
 }: ChapterTextViewProps) {
   // ALWAYS call hooks first, before any conditional returns
   // This ensures hooks are called in the same order on every render
@@ -91,6 +92,7 @@ export function ChapterTextView({
         color="gray.700"
         _dark={{ color: 'gray.300' }}
         whiteSpace="pre-wrap"
+        fontFamily={fontFamily}
       >
         {chapterText}
       </Text>
@@ -105,6 +107,7 @@ export function ChapterTextView({
       color="gray.700"
       _dark={{ color: 'gray.300' }}
       whiteSpace="pre-wrap"
+      fontFamily={fontFamily}
     >
       {textSegments.textBeforeSentence}
       <Box

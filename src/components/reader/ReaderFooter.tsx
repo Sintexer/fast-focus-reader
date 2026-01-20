@@ -52,24 +52,24 @@ export function ReaderFooter({
   return (
     <Box w="100%" py={2} px={2}>
       <HStack justifyContent="center" alignItems="center" gap={2} w="100%">
-        {/* Left flex: space-between with chapter toggle and sentence number */}
+        {/* Left flex: space-between with settings button and sentence number */}
         <Flex flex="1" justifyContent="space-between" alignItems="center" gap={2}>
-          {/* Toggle button for chapter view */}
-          {onToggleChapterView && (
-            <Tooltip content={showChapterView ? t('hideChapterView') : t('showChapterView')}>
+          {/* Settings button */}
+          {onOpenSettings && (
+            <Tooltip content={t('openSettings')}>
               <IconButton
-                aria-label={showChapterView ? t('hideChapterView') : t('showChapterView')}
-                onClick={onToggleChapterView}
+                aria-label={t('openSettings')}
+                onClick={onOpenSettings}
                 size="xs"
                 variant="ghost"
                 colorPalette="gray"
                 minW="auto"
                 h="auto"
                 p={0}
-                opacity={showChapterView ? 1 : 0.4}
+                opacity={0.4}
                 _hover={{ opacity: 1 }}
               >
-                <BsFileText />
+                <BsGear />
               </IconButton>
             </Tooltip>
           )}
@@ -85,7 +85,7 @@ export function ReaderFooter({
           •
         </Box>
 
-        {/* Right flex: WPM and settings button */}
+        {/* Right flex: WPM and chapter toggle button */}
         <Flex flex="1" justifyContent="space-between" alignItems="center" gap={2}>
           {/* WPM - clickable */}
           <HStack gap={1} alignItems="center">
@@ -123,22 +123,22 @@ export function ReaderFooter({
             ) : null}
           </HStack>
 
-          {/* Settings button */}
-          {onOpenSettings && (
-            <Tooltip content={t('openSettings')}>
+          {/* Toggle button for chapter view */}
+          {onToggleChapterView && (
+            <Tooltip content={showChapterView ? t('hideChapterView') : t('showChapterView')}>
               <IconButton
-                aria-label={t('openSettings')}
-                onClick={onOpenSettings}
+                aria-label={showChapterView ? t('hideChapterView') : t('showChapterView')}
+                onClick={onToggleChapterView}
                 size="xs"
                 variant="ghost"
                 colorPalette="gray"
                 minW="auto"
                 h="auto"
                 p={0}
-                opacity={0.4}
+                opacity={showChapterView ? 1 : 0.4}
                 _hover={{ opacity: 1 }}
               >
-                <BsGear />
+                <BsFileText />
               </IconButton>
             </Tooltip>
           )}

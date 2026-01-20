@@ -29,6 +29,7 @@ export interface ChapterTextViewProps {
   currentWord: ProcessedWord | null;
   currentSentence: ProcessedWord[] | null;
   scrollContainerRef?: React.RefObject<HTMLDivElement | null>;
+  fontFamily?: string;
 }
 
 /**
@@ -36,5 +37,6 @@ export interface ChapterTextViewProps {
  */
 export interface CurrentWordDisplayProps {
   word: string;
+  fontFamily?: string;
 }
 

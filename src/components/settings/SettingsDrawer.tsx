@@ -3,9 +3,9 @@ import { AutoStopSettings } from './AutoStopSettings';
 import { ThemeSettings } from './ThemeSettings';
 import { ReaderControlsSettings } from './ReaderControlsSettings';
 import { WPMSettings } from './WPMSettings';
+import { FontSettings } from './FontSettings';
 import type { SettingsDrawerProps } from './types';
 import { useI18n } from '../../i18n/useI18n';
-import type { Settings } from '../../utils/db';
 
 /**
  * Settings drawer component that slides up from the bottom
@@ -47,6 +47,17 @@ export function SettingsDrawer({
 
                 <Separator />
 
+                {/* Font settings */}
+                {settings && (
+                  <>
+                    <FontSettings
+                      settings={settings}
+                      onSettingsChange={onSettingsChange}
+                    />
+                    <Separator />
+                  </>
+                )}
+
                 {/* Reader controls settings */}
                 <ReaderControlsSettings
                   showControls={showControls}
@@ -69,9 +80,6 @@ export function SettingsDrawer({
 
                 {/* Theme settings */}
                 <ThemeSettings />
-
-                {/* Placeholder for future settings */}
-                {/* Font selection will be added here */}
               </VStack>
             </Drawer.Body>
           </Drawer.Content>

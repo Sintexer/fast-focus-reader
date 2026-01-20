@@ -23,6 +23,7 @@ export interface ReaderMainPanelProps {
   currentTitle?: string | null;
   shouldAutoplay?: boolean;
   isLoadingProgress?: boolean;
+  fontFamily?: string;
 }
 
 /**
@@ -42,6 +43,7 @@ export function ReaderMainPanel({
   currentTitle = null,
   shouldAutoplay = false,
   isLoadingProgress = false,
+  fontFamily,
 }: ReaderMainPanelProps) {
   const { t } = useI18n();
   const chapterText = useMemo(
@@ -241,6 +243,7 @@ export function ReaderMainPanel({
             chapterText={chapterText}
             currentWord={currentWord}
             currentSentence={currentSentence}
+            fontFamily={fontFamily}
           />
         </Box>
       )}
@@ -257,7 +260,7 @@ export function ReaderMainPanel({
         {showingTitle && currentTitle ? (
           <TitleDisplay title={currentTitle} type={showingTitle} />
         ) : currentWord ? (
-          <CurrentWordDisplay word={currentWord.text} />
+          <CurrentWordDisplay word={currentWord.text} fontFamily={fontFamily} />
         ) : null}
       </Box>
     </Box>

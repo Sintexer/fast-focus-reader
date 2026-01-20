@@ -22,8 +22,28 @@ export function LibraryFooter({
   return (
     <Box w="100%" py={2} px={2}>
       <HStack justifyContent="center" alignItems="center" gap={2} w="100%">
-        {/* Left flex: settings button */}
+        {/* Left flex: locale code */}
         <Flex flex="1" justifyContent="flex-start" alignItems="center" gap={2}>
+          {onOpenLanguageSelection && (
+            <Tooltip content={t('selectLanguage')}>
+              <Text
+                fontSize="xs"
+                color="gray.500"
+                _dark={{ color: 'gray.400' }}
+                cursor="pointer"
+                onClick={onOpenLanguageSelection}
+                _hover={{ color: 'gray.700', _dark: { color: 'gray.300' } }}
+                transition="color 0.2s"
+                textTransform="uppercase"
+              >
+                {locale}
+              </Text>
+            </Tooltip>
+          )}
+        </Flex>
+
+        {/* Right flex: settings button */}
+        <Flex flex="1" justifyContent="flex-end" alignItems="center" gap={2}>
           {onOpenSettings && (
             <Tooltip content={t('openSettings')}>
               <IconButton
@@ -40,26 +60,6 @@ export function LibraryFooter({
               >
                 <BsGear />
               </IconButton>
-            </Tooltip>
-          )}
-        </Flex>
-
-        {/* Right flex: locale code */}
-        <Flex flex="1" justifyContent="flex-end" alignItems="center" gap={2}>
-          {onOpenLanguageSelection && (
-            <Tooltip content={t('selectLanguage')}>
-              <Text
-                fontSize="xs"
-                color="gray.500"
-                _dark={{ color: 'gray.400' }}
-                cursor="pointer"
-                onClick={onOpenLanguageSelection}
-                _hover={{ color: 'gray.700', _dark: { color: 'gray.300' } }}
-                transition="color 0.2s"
-                textTransform="uppercase"
-              >
-                {locale}
-              </Text>
             </Tooltip>
           )}
         </Flex>

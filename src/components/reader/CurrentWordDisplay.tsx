@@ -8,6 +8,7 @@ import type { CurrentWordDisplayProps } from './types';
  */
 export function CurrentWordDisplay({
   word,
+  fontFamily,
 }: CurrentWordDisplayProps) {
   return (
     <Box
@@ -46,6 +47,7 @@ export function CurrentWordDisplay({
         middleLetterColor="red.500"
         punctuationColor="orange.500"
         middleLetterWeight="bold"
+        fontFamily={fontFamily}
       />
     </Box>
   );

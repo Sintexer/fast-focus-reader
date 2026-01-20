@@ -58,6 +58,8 @@ export interface Settings {
   warmupDuration: number; // milliseconds
   autoStopMode?: 'disabled' | 'sentence' | 'paragraph';
   showControls?: boolean;
+  fontType?: 'mono' | 'regular'; // Font type: monospace or regular
+  fontFamily?: string; // Selected font family name
 }
 
 export type Locale = 'en' | 'ru';
@@ -220,6 +222,8 @@ export async function getSettingsOrDefault(): Promise<Settings> {
     staticWPM: 200,
     dynamicWPMEnabled: false,
     warmupDuration: 60000, // 60 seconds
+    fontType: 'regular',
+    fontFamily: 'Inter',
   };
   
   await saveSettings(defaultSettings);

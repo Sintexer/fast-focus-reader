@@ -7,6 +7,7 @@ export interface AnchoredWordDisplayProps {
   middleLetterColor?: string;
   punctuationColor?: string;
   middleLetterWeight?: TextProps['fontWeight'];
+  fontFamily?: string;
 }
 
 /**
@@ -19,6 +20,7 @@ export function AnchoredWordDisplay({
   middleLetterColor = 'red.500',
   punctuationColor = 'orange.500',
   middleLetterWeight = 'bold',
+  fontFamily,
 }: AnchoredWordDisplayProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const measureRef = useRef<HTMLSpanElement>(null);
@@ -97,6 +99,7 @@ export function AnchoredWordDisplay({
       display="inline-block"
       whiteSpace="nowrap"
       fontSize={fontSize}
+      fontFamily={fontFamily}
       w="100%"
       textAlign="center"
     >
@@ -109,6 +112,7 @@ export function AnchoredWordDisplay({
         whiteSpace="pre"
         pointerEvents="none"
         fontSize={fontSize}
+        fontFamily={fontFamily}
       >
         {firstPart}
       </Box>
@@ -148,6 +152,7 @@ export function AnchoredWordDisplay({
         transform={`translateX(${-leftShift}px)`}
         whiteSpace="nowrap"
         fontSize={fontSize}
+        fontFamily={fontFamily}
       >
         {/* Render first part with punctuation highlighting */}
         {firstPart.split('').map((char, idx) => (
@@ -182,7 +187,7 @@ export function AnchoredWordDisplay({
       </Box>
 
       {/* Zero-width placeholder to reserve space and prevent layout shift */}
-      <Text as="span" visibility="hidden" fontSize={fontSize}>
+      <Text as="span" visibility="hidden" fontSize={fontSize} fontFamily={fontFamily}>
         {word}
       </Text>
     </Box>

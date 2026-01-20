@@ -110,12 +110,12 @@ export const ReaderControlsPanel = forwardRef<ReaderControlsPanelRef, ReaderCont
               <Tooltip 
                 content={t('restartSentence')} 
                 positioning={{ placement: 'top' }}
-                disabled={disabled}
+                disabled={disabled || isAtStart}
               >
                 <IconButton
                   aria-label={t('restartSentence')}
                   onClick={onRestartSentence}
-                  disabled={disabled}
+                  disabled={disabled || isAtStart}
                   colorPalette="gray"
                   size="lg"
                   variant="ghost"

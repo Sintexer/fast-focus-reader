@@ -22,6 +22,7 @@ export interface ReaderMainPanelProps {
   currentTitle?: string | null;
   shouldAutoplay?: boolean;
   isLoadingProgress?: boolean;
+  fontFamily?: string;
 }
 
 /**
@@ -41,6 +42,7 @@ export function ReaderMainPanel({
   currentTitle = null,
   shouldAutoplay = false,
   isLoadingProgress = false,
+  fontFamily,
 }: ReaderMainPanelProps) {
   const chapterText = useMemo(
     () => getChapterText(book, volumeId, chapterId),
@@ -93,6 +95,7 @@ export function ReaderMainPanel({
       advanceToNextSentence: playback.advanceToNextSentence,
       isStoppedAtSentenceEnd: playback.isStoppedAtSentenceEnd,
       currentSentenceIndex: playback.currentSentenceIndex,
+      currentWordIndex: playback.currentWordIndex,
       maxSentenceIndex: playback.maxSentenceIndex,
       wpm: playback.wpm,
     }),
@@ -109,6 +112,7 @@ export function ReaderMainPanel({
       playback.advanceToNextSentence,
       playback.isStoppedAtSentenceEnd,
       playback.currentSentenceIndex,
+      playback.currentWordIndex,
       playback.maxSentenceIndex,
       playback.wpm,
     ]
@@ -237,6 +241,7 @@ export function ReaderMainPanel({
             chapterText={chapterText}
             currentWord={currentWord}
             currentSentence={currentSentence}
+            fontFamily={fontFamily}
           />
         </Box>
       )}
@@ -253,7 +258,7 @@ export function ReaderMainPanel({
         {showingTitle && currentTitle ? (
           <TitleDisplay title={currentTitle} type={showingTitle} />
         ) : currentWord ? (
-          <CurrentWordDisplay word={currentWord.text} />
+          <CurrentWordDisplay word={currentWord.text} fontFamily={fontFamily} />
         ) : null}
       </Box>
     </Box>

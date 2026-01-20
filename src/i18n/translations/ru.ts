@@ -58,6 +58,12 @@ export const ru = {
   currentWPM: 'Текущая',
   resetToInitialWPM: 'Сбросить до начальной скорости',
   wpmSettingsHint: 'Вы можете изменить режим скорости чтения через',
+  fontType: 'Тип шрифта',
+  fontTypeDescription: 'Выберите между моноширинным и обычным шрифтом',
+  regular: 'Обычный',
+  mono: 'Моно',
+  fontFamily: 'Семейство шрифтов',
+  fontFamilyDescription: 'Нажмите для переключения между доступными шрифтами',
   
   // Book Upload
   selectFile: 'Выбрать файл',

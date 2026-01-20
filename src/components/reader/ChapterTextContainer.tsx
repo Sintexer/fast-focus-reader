@@ -18,6 +18,7 @@ export function ChapterTextContainer(props: ChapterTextViewProps) {
       minH="200px"
       maxH="300px"
       py={4}
+      px={2}
       bg="gray.50"
       _dark={{ bg: 'gray.800', borderColor: 'gray.700' }}
       borderRadius="md"
@@ -25,7 +26,10 @@ export function ChapterTextContainer(props: ChapterTextViewProps) {
       borderColor="gray.200"
       overflowY="auto"
     >
-      <ChapterTextView {...props} scrollContainerRef={scrollContainerRef as React.RefObject<HTMLDivElement | null>} />
+      <ChapterTextView 
+        {...props} 
+        scrollContainerRef={scrollContainerRef as React.RefObject<HTMLDivElement | null>} 
+      />
     </Box>
   );
 }
