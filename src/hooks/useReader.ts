@@ -57,27 +57,19 @@ export function useReader({ book, bookId, settings }: UseReaderOptions) {
       if (!state.volumeId || !state.chapterId) {
         const firstVolume = book.structure.volumes[0];
         if (firstVolume && firstVolume.chapters.length > 0) {
-          const hasRealVolumes = book.structure.volumes.length > 1 || 
-            (book.structure.volumes.length === 1 && book.structure.volumes[0].title !== '');
-          const firstChapter = firstVolume.chapters[0];
-          const shouldShowVolumeTitle = hasRealVolumes && firstVolume.title !== '';
-          const shouldShowChapterTitle = firstChapter.title !== '';
-          
           setState((prev) => ({
             ...prev,
             volumeId: firstVolume.id,
-            chapterId: firstChapter.id,
+            chapterId: firstVolume.chapters[0].id,
             sentenceIndex: 0,
             wordIndex: 0,
             paragraphIndex: 0,
-            showingTitle: shouldShowVolumeTitle ? 'volume' : (shouldShowChapterTitle ? 'chapter' : null),
-            isLoadingProgress: false, // Done initializing
+            // Don't set showingTitle or isLoadingProgress here - wait for progress to load
+            // If no progress exists, it will be set in the progress loading effect
           }));
         }
-      } else {
-        // Book loaded but we already have state - mark as not loading
-        setState((prev) => ({ ...prev, isLoadingProgress: false }));
       }
+      // Don't mark as not loading here - wait for progress to load if bookId exists
     }
   }, [book]);
 
@@ -105,13 +97,53 @@ export function useReader({ book, bookId, settings }: UseReaderOptions) {
             isLoadingProgress: false, // Done loading progress
           }));
         } else {
-          // No progress found, mark as not loading
-          setState((prev) => ({ ...prev, isLoadingProgress: false }));
+          // No progress found - initialize to first chapter with titles if needed
+          const firstVolume = book.structure.volumes[0];
+          if (firstVolume && firstVolume.chapters.length > 0) {
+            const hasRealVolumes = book.structure.volumes.length > 1 || 
+              (book.structure.volumes.length === 1 && book.structure.volumes[0].title !== '');
+            const firstChapter = firstVolume.chapters[0];
+            const shouldShowVolumeTitle = hasRealVolumes && firstVolume.title !== '';
+            const shouldShowChapterTitle = firstChapter.title !== '';
+            
+            setState((prev) => ({
+              ...prev,
+              volumeId: prev.volumeId || firstVolume.id,
+              chapterId: prev.chapterId || firstChapter.id,
+              sentenceIndex: prev.sentenceIndex || 0,
+              wordIndex: prev.wordIndex || 0,
+              paragraphIndex: prev.paragraphIndex || 0,
+              showingTitle: shouldShowVolumeTitle ? 'volume' : (shouldShowChapterTitle ? 'chapter' : null),
+              isLoadingProgress: false, // Done loading
+            }));
+          } else {
+            setState((prev) => ({ ...prev, isLoadingProgress: false }));
+          }
         }
       });
     } else if (book && !bookId) {
-      // No bookId, mark as not loading
-      setState((prev) => ({ ...prev, isLoadingProgress: false }));
+      // No bookId - initialize to first chapter with titles if needed
+      const firstVolume = book.structure.volumes[0];
+      if (firstVolume && firstVolume.chapters.length > 0) {
+        const hasRealVolumes = book.structure.volumes.length > 1 || 
+          (book.structure.volumes.length === 1 && book.structure.volumes[0].title !== '');
+        const firstChapter = firstVolume.chapters[0];
+        const shouldShowVolumeTitle = hasRealVolumes && firstVolume.title !== '';
+        const shouldShowChapterTitle = firstChapter.title !== '';
+        
+        setState((prev) => ({
+          ...prev,
+          volumeId: prev.volumeId || firstVolume.id,
+          chapterId: prev.chapterId || firstChapter.id,
+          sentenceIndex: prev.sentenceIndex || 0,
+          wordIndex: prev.wordIndex || 0,
+          paragraphIndex: prev.paragraphIndex || 0,
+          showingTitle: shouldShowVolumeTitle ? 'volume' : (shouldShowChapterTitle ? 'chapter' : null),
+          isLoadingProgress: false, // Done loading
+        }));
+      } else {
+        setState((prev) => ({ ...prev, isLoadingProgress: false }));
+      }
     }
   }, [bookId, book]);
   
