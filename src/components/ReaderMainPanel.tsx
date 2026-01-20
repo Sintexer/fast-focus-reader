@@ -234,7 +234,7 @@ export function ReaderMainPanel({
           transition="opacity 0.2s ease-out, transform 0.2s ease-out"
           mb={6}
           flexShrink={0}
-          key={`chapter-view-${currentWord?.charIndex || 0}`}
+          key={`chapter-view-${volumeId}-${chapterId}`}
         >
           <ChapterTextContainer
             chapterText={chapterText}

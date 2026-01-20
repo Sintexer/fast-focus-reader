@@ -1,5 +1,5 @@
 import { Box, Text, Mark } from '@chakra-ui/react';
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useMemo } from 'react';
 import type { ChapterTextViewProps } from './types';
 
 /**
@@ -13,7 +13,77 @@ export function ChapterTextView({
   currentSentence,
   scrollContainerRef,
 }: ChapterTextViewProps) {
-  if (!currentWord || !chapterText) {
+  // ALWAYS call hooks first, before any conditional returns
+  // This ensures hooks are called in the same order on every render
+  const sentenceRef = useRef<HTMLSpanElement>(null);
+
+  // Memoize text segments to avoid recalculating on every render
+  const textSegments = useMemo(() => {
+    if (!currentWord || !chapterText) {
+      return null;
+    }
+
+    const wordStart = currentWord.charIndex;
+    const wordEnd = wordStart + currentWord.text.length;
+
+    let sentenceStart = 0;
+    let sentenceEnd = chapterText.length;
+
+    if (currentSentence && currentSentence.length > 0) {
+      const firstWord = currentSentence[0];
+      const lastWord = currentSentence[currentSentence.length - 1];
+      sentenceStart = firstWord.charIndex;
+      sentenceEnd = lastWord.charIndex + lastWord.text.length;
+    }
+
+    return {
+      textBeforeSentence: chapterText.slice(0, sentenceStart),
+      sentenceTextBeforeWord: chapterText.slice(sentenceStart, wordStart),
+      currentWordText: chapterText.slice(wordStart, wordEnd),
+      sentenceTextAfterWord: chapterText.slice(wordEnd, sentenceEnd),
+      textAfterSentence: chapterText.slice(sentenceEnd),
+    };
+  }, [chapterText, currentWord, currentSentence]);
+
+  // Scroll to current sentence when it changes
+  // Only scroll if we have a current word and sentence
+  useEffect(() => {
+    if (!currentWord || !textSegments || !sentenceRef.current || !scrollContainerRef?.current) {
+      return;
+    }
+
+    const sentenceElement = sentenceRef.current;
+    const container = scrollContainerRef.current;
+    
+    // Use requestAnimationFrame to ensure DOM is fully rendered
+    requestAnimationFrame(() => {
+      // Calculate position relative to container
+      const containerRect = container.getBoundingClientRect();
+      const sentenceRect = sentenceElement.getBoundingClientRect();
+      
+      // Calculate scroll position to center the sentence in the viewport
+      const scrollTop = container.scrollTop;
+      const sentenceTop = sentenceRect.top - containerRect.top + scrollTop;
+      const sentenceHeight = sentenceRect.height;
+      const containerHeight = container.clientHeight;
+      
+      // Center the sentence in the viewport
+      const targetScrollTop = sentenceTop - (containerHeight / 2) + (sentenceHeight / 2);
+      
+      container.scrollTo({
+        top: Math.max(0, targetScrollTop),
+        behavior: 'smooth',
+      });
+    });
+  }, [currentWord, textSegments, scrollContainerRef]);
+
+  // Conditional rendering AFTER all hooks are called
+  if (!chapterText) {
+    return null;
+  }
+
+  // If no current word or segments, show plain text
+  if (!currentWord || !textSegments) {
     return (
       <Text
         fontSize="sm"
@@ -27,56 +97,7 @@ export function ChapterTextView({
     );
   }
 
-  const wordStart = currentWord.charIndex;
-  const wordEnd = wordStart + currentWord.text.length;
-
-  let sentenceStart = 0;
-  let sentenceEnd = chapterText.length;
-
-  if (currentSentence && currentSentence.length > 0) {
-    const firstWord = currentSentence[0];
-    const lastWord = currentSentence[currentSentence.length - 1];
-    sentenceStart = firstWord.charIndex;
-    sentenceEnd = lastWord.charIndex + lastWord.text.length;
-  }
-
-  const textBeforeSentence = chapterText.slice(0, sentenceStart);
-  const sentenceTextBeforeWord = chapterText.slice(sentenceStart, wordStart);
-  const currentWordText = chapterText.slice(wordStart, wordEnd);
-  const sentenceTextAfterWord = chapterText.slice(wordEnd, sentenceEnd);
-  const textAfterSentence = chapterText.slice(sentenceEnd);
-
-  const sentenceRef = useRef<HTMLSpanElement>(null);
-
-  // Scroll to current sentence when it changes
-  useEffect(() => {
-    if (sentenceRef.current && scrollContainerRef?.current) {
-      const sentenceElement = sentenceRef.current;
-      const container = scrollContainerRef.current;
-      
-      // Use requestAnimationFrame to ensure DOM is fully rendered
-      requestAnimationFrame(() => {
-        // Calculate position relative to container
-        const containerRect = container.getBoundingClientRect();
-        const sentenceRect = sentenceElement.getBoundingClientRect();
-        
-        // Calculate scroll position to center the sentence in the viewport
-        const scrollTop = container.scrollTop;
-        const sentenceTop = sentenceRect.top - containerRect.top + scrollTop;
-        const sentenceHeight = sentenceRect.height;
-        const containerHeight = container.clientHeight;
-        
-        // Center the sentence in the viewport
-        const targetScrollTop = sentenceTop - (containerHeight / 2) + (sentenceHeight / 2);
-        
-        container.scrollTo({
-          top: Math.max(0, targetScrollTop),
-          behavior: 'smooth',
-        });
-      });
-    }
-  }, [currentSentence, currentWord, scrollContainerRef]);
-
+  // Render with highlighting
   return (
     <Text
       fontSize="sm"
@@ -85,7 +106,7 @@ export function ChapterTextView({
       _dark={{ color: 'gray.300' }}
       whiteSpace="pre-wrap"
     >
-      {textBeforeSentence}
+      {textSegments.textBeforeSentence}
       <Box
         ref={sentenceRef}
         as="span"
@@ -98,7 +119,7 @@ export function ChapterTextView({
           fontFamily: 'inherit',
         }}
       >
-        {sentenceTextBeforeWord}
+        {textSegments.sentenceTextBeforeWord}
         <Mark
           bg="blue.200"
           color="blue.900"
@@ -113,11 +134,11 @@ export function ChapterTextView({
             fontFamily: 'inherit',
           }}
         >
-          {currentWordText}
+          {textSegments.currentWordText}
         </Mark>
-        {sentenceTextAfterWord}
+        {textSegments.sentenceTextAfterWord}
       </Box>
-      {textAfterSentence}
+      {textSegments.textAfterSentence}
     </Text>
   );
 }
