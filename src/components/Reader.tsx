@@ -195,7 +195,56 @@ export function Reader() {
         if (!settings) return;
         const initialWPMValue = getInitialWPM(settings);
         reader.setWPM(initialWPMValue);
+        // Reset previous sentence index to allow WPM to increase again
+        // This is handled by the useReader hook's reset logic
     }, [settings, reader]);
+
+    // Track playbackController sentence changes for dynamic WPM
+    // Note: This handles chapter-level playback, while useReader handles book structure
+    const prevPlaybackSentenceRef = useRef<number>(-1);
+    const prevPlaybackChapterRef = useRef<string>('');
+    useEffect(() => {
+        if (!playbackControls || !settings?.dynamicWPMEnabled) {
+            if (playbackControls) {
+                prevPlaybackSentenceRef.current = playbackControls.currentSentenceIndex;
+                prevPlaybackChapterRef.current = `${reader.state.volumeId}-${reader.state.chapterId}`;
+            }
+            return;
+        }
+
+        const currentChapterKey = `${reader.state.volumeId}-${reader.state.chapterId}`;
+        const currentSentenceIndex = playbackControls.currentSentenceIndex;
+        
+        // Reset when chapter changes
+        if (currentChapterKey !== prevPlaybackChapterRef.current) {
+            prevPlaybackSentenceRef.current = currentSentenceIndex;
+            prevPlaybackChapterRef.current = currentChapterKey;
+            return;
+        }
+        
+        // Only increase WPM if we moved to a new sentence (forward)
+        if (prevPlaybackSentenceRef.current >= 0 && 
+            currentSentenceIndex !== prevPlaybackSentenceRef.current &&
+            currentSentenceIndex > prevPlaybackSentenceRef.current) {
+            
+            const minWPM = settings.minWPM ?? 50;
+            const maxWPM = settings.maxWPMRange ?? 1200;
+            const diff = maxWPM - minWPM;
+            
+            // Calculate step: 5% of (max - min), rounded down to nearest 5, min 10
+            const desiredStep = Math.floor((diff * 0.05) / 5) * 5;
+            const step = Math.max(10, desiredStep);
+            
+            const currentWPM = reader.state.currentWPM;
+            if (currentWPM < maxWPM) {
+                const newWPM = Math.min(currentWPM + step, maxWPM);
+                reader.setWPM(newWPM);
+            }
+        }
+        
+        prevPlaybackSentenceRef.current = currentSentenceIndex;
+        prevPlaybackChapterRef.current = currentChapterKey;
+    }, [playbackControls?.currentSentenceIndex, reader.state.volumeId, reader.state.chapterId, settings, reader]);
 
     // Save UI settings when they change
     const handleAutoStopModeChange = useCallback(async (mode: AutoStopMode) => {
@@ -375,7 +424,8 @@ export function Reader() {
                             <ReaderFooter
                                 currentSentenceIndex={playbackControls.currentSentenceIndex}
                                 maxSentenceIndex={playbackControls.maxSentenceIndex}
-                                wpm={playbackControls.wpm}
+                                wpm={reader.state.currentWPM}
+                                settings={settings}
                                 showChapterView={showChapterView}
                                 onToggleChapterView={handleToggleChapterView}
                                 onOpenSettings={handleOpenSettings}

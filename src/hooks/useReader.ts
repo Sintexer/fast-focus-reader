@@ -65,6 +65,7 @@ export function useReader({ book, bookId, settings }: UseReaderOptions) {
   
   const timerRef = useRef<number | null>(null);
   const warmupStartTimeRef = useRef<number | null>(null);
+  const previousSentenceIndexRef = useRef<number>(-1);
 
   // Initialize iterator when book changes
   useEffect(() => {
@@ -114,6 +115,9 @@ export function useReader({ book, bookId, settings }: UseReaderOptions) {
             showingTitle: null, // Don't show title when loading from progress
             isLoadingProgress: false, // Done loading progress
           }));
+          
+          // Initialize previous sentence index
+          previousSentenceIndexRef.current = progress.sentenceIndex;
         } else {
           // No progress found - initialize to first chapter with titles if needed
           const firstVolume = book.structure.volumes[0];
@@ -124,18 +128,23 @@ export function useReader({ book, bookId, settings }: UseReaderOptions) {
             const shouldShowVolumeTitle = hasRealVolumes && firstVolume.title !== '';
             const shouldShowChapterTitle = firstChapter.title !== '';
             
+            const initialSentenceIndex = 0;
             setState((prev) => ({
               ...prev,
               volumeId: prev.volumeId || firstVolume.id,
               chapterId: prev.chapterId || firstChapter.id,
-              sentenceIndex: prev.sentenceIndex || 0,
+              sentenceIndex: prev.sentenceIndex || initialSentenceIndex,
               wordIndex: prev.wordIndex || 0,
               paragraphIndex: prev.paragraphIndex || 0,
               showingTitle: shouldShowVolumeTitle ? 'volume' : (shouldShowChapterTitle ? 'chapter' : null),
               isLoadingProgress: false, // Done loading
             }));
+            
+            // Initialize previous sentence index
+            previousSentenceIndexRef.current = initialSentenceIndex;
           } else {
             setState((prev) => ({ ...prev, isLoadingProgress: false }));
+            previousSentenceIndexRef.current = -1;
           }
         }
       });
@@ -907,7 +916,11 @@ export function useReader({ book, bookId, settings }: UseReaderOptions) {
     warmupStartTimeRef.current = null;
     // Store WPM in localStorage
     storeWPM(wpm);
-  }, []);
+    // Reset previous sentence index to allow WPM to increase again after manual reset
+    if (settings.dynamicWPMEnabled) {
+      previousSentenceIndexRef.current = state.sentenceIndex;
+    }
+  }, [settings.dynamicWPMEnabled, state.sentenceIndex]);
   
   // Toggle full sentence display
   const toggleFullSentence = useCallback(() => {
@@ -988,6 +1001,51 @@ export function useReader({ book, bookId, settings }: UseReaderOptions) {
     
     return () => clearInterval(interval);
   }, [book]);
+
+  // Track sentence changes and increase WPM dynamically
+  const prevChapterKeyRef = useRef<string>('');
+  useEffect(() => {
+    if (!settings.dynamicWPMEnabled || !book) {
+      previousSentenceIndexRef.current = state.sentenceIndex;
+      prevChapterKeyRef.current = `${state.volumeId}-${state.chapterId}`;
+      return;
+    }
+    
+    const currentChapterKey = `${state.volumeId}-${state.chapterId}`;
+    
+    // Reset previous sentence index when chapter changes
+    if (currentChapterKey !== prevChapterKeyRef.current) {
+      previousSentenceIndexRef.current = state.sentenceIndex;
+      prevChapterKeyRef.current = currentChapterKey;
+      return;
+    }
+    
+    // Only increase WPM if we moved to a new sentence in the same chapter (forward)
+    if (previousSentenceIndexRef.current >= 0 && 
+        state.sentenceIndex !== previousSentenceIndexRef.current &&
+        state.sentenceIndex > previousSentenceIndexRef.current) {
+      
+      const minWPM = settings.minWPM ?? 50;
+      const maxWPM = settings.maxWPMRange ?? 1200;
+      const diff = maxWPM - minWPM;
+      
+      // Calculate step: 5% of (max - min), rounded down to nearest 5, min 10
+      const desiredStep = Math.floor((diff * 0.05) / 5) * 5;
+      const step = Math.max(10, desiredStep);
+      
+      setState((prev) => {
+        if (prev.currentWPM < maxWPM) {
+          const newWPM = Math.min(prev.currentWPM + step, maxWPM);
+          storeWPM(newWPM);
+          return { ...prev, currentWPM: newWPM };
+        }
+        return prev;
+      });
+    }
+    
+    // Update previous sentence index
+    previousSentenceIndexRef.current = state.sentenceIndex;
+  }, [state.volumeId, state.chapterId, state.sentenceIndex, settings, book]);
   
   // Calculate progress percentage (approximate based on chapters)
   const progress = book ? 0 : 0; // TODO: Calculate based on chapter progress
