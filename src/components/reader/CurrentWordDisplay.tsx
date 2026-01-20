@@ -12,7 +12,7 @@ export function CurrentWordDisplay({
   return (
     <Box
       w="100%"
-      p={6}
+      py={6}
       borderTopWidth="1px"
       borderBottomWidth="1px"
       borderTopColor="gray.200"

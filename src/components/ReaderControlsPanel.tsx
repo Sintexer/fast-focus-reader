@@ -57,7 +57,7 @@ export const ReaderControlsPanel = forwardRef<ReaderControlsPanelRef, ReaderCont
 
     if (isMinimalView) {
       return ( // todo fix up the sticcky next button in simple view - it attached to the right border
-        <Box py={4} px={8} w="100%" display="flex" justifyContent="center">
+        <Box py={4} w="100%" display="flex" justifyContent="center">
           <Flex
             w="100%"
             maxW={{ base: "100%", sm: "30rem" }}
@@ -148,7 +148,7 @@ export const ReaderControlsPanel = forwardRef<ReaderControlsPanelRef, ReaderCont
 
     // Advanced view - all controls
     return (
-      <Box p={4} mb={6}>
+      <Box py={4} mb={6}>
         <HStack gap={2} justifyContent="center" alignItems="center" flexWrap="nowrap">
           {/* Reset button - on the left */}
           <Tooltip 

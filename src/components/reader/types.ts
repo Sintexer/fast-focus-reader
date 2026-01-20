@@ -27,7 +27,7 @@ export interface ChapterTextViewProps {
   chapterText: string;
   currentWord: ProcessedWord | null;
   currentSentence: ProcessedWord[] | null;
-  scrollContainerRef?: React.RefObject<HTMLDivElement>;
+  scrollContainerRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 /**
@@ -37,14 +37,3 @@ export interface CurrentWordDisplayProps {
   word: string;
 }
 
-/**
- * Props for components that display playback state information
- */
-export interface PlaybackStateInfoProps {
-  currentSentenceIndex: number;
-  maxSentenceIndex: number;
-  wpm: number;
-  showChapterView?: boolean;
-  onToggleChapterView?: () => void;
-  onOpenSettings?: () => void;
-}

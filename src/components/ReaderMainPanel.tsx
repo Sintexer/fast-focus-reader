@@ -191,7 +191,6 @@ export function ReaderMainPanel({
         alignItems="center" 
         justifyContent="center"
         overflow="hidden"
-        px={4}
       >
         <Text color="gray.500">Loading...</Text>
       </Box>
@@ -207,7 +206,6 @@ export function ReaderMainPanel({
         alignItems="center" 
         justifyContent="center"
         overflow="hidden"
-        px={4}
       >
         <Text color="gray.500">No chapter content available</Text>
       </Box>
@@ -222,7 +220,6 @@ export function ReaderMainPanel({
       display="flex" 
       flexDirection="column" 
       overflow="hidden"
-      px={4}
       py={6}
     >
       {/* Chapter text view - conditionally rendered at top - always show when enabled, even when showing title */}

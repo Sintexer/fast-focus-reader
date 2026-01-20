@@ -4,10 +4,10 @@ import {useReader} from '../hooks/useReader';
 import {type Book, getBook, getSettingsOrDefault, type Settings} from '../utils/db';
 import {ReaderMainPanel} from './ReaderMainPanel';
 import {ReaderControlsPanel, type ReaderControlsPanelRef} from './ReaderControlsPanel';
-import {Box, Container, Flex, HStack, Text} from '@chakra-ui/react';
+import {Box, Container, Flex, Text} from '@chakra-ui/react';
 import {TableOfContents} from './TableOfContents';
-import {BookLocation} from './BookLocation';
-import {PlaybackStateInfo} from './reader/PlaybackStateInfo';
+import {ReaderHeader} from './ReaderHeader';
+import {ReaderFooter} from './ReaderFooter';
 import {SettingsDrawer} from './settings/SettingsDrawer';
 import type {PlaybackControls} from './reader/types';
 import type {AutoStopMode} from './settings/types';
@@ -176,55 +176,51 @@ export function Reader() {
                     overflow="hidden"
                     overflowX="hidden"
                 >
-                    {/* Top panel - config and location */}
-                    <Box>
-                        <Box p={2}>
-                            <HStack justifyContent="flex-end" alignItems="center" mb={2}>
-                                <Box
-                                    onClick={() => setTocOpen(!tocOpen)}
-                                    cursor="pointer"
-                                >
-                                    <BookLocation
-                                        book={book}
-                                        volumeId={reader.state.volumeId}
-                                        chapterId={reader.state.chapterId}
-                                    />
-                                </Box>
-                            </HStack>
-                        </Box>
-                    </Box>
+                    {/* Header - book location and TOC toggle */}
+                    <ReaderHeader
+                        book={book}
+                        volumeId={reader.state.volumeId}
+                        chapterId={reader.state.chapterId}
+                        onToggleTOC={() => setTocOpen(!tocOpen)}
+                    />
 
-                    {/* Center area - words presentation */}
+                    {/* Main content area - main panel and controls as siblings */}
                     <Box
                         flex="1"
                         display="flex"
                         flexDirection="column"
-                        alignItems="center"
-                        justifyContent="center"
                         overflow="hidden"
-                        px={4}
+                        px={2}
                     >
-                        <ReaderMainPanel
-                            key={`${reader.state.volumeId}-${reader.state.chapterId}`}
-                            book={book}
-                            volumeId={reader.state.volumeId}
-                            chapterId={reader.state.chapterId}
-                            initialWPM={settings.initWPM}
-                            autoStopOnSentenceEnd={autoStopMode === 'sentence' || autoStopMode === 'paragraph'}
-                            autoStopOnParagraphEnd={autoStopMode === 'paragraph'}
-                            onPlaybackReady={handlePlaybackReady}
-                            showChapterView={showChapterView}
-                            onToggleChapterView={handleToggleChapterView}
-                            showingTitle={reader.state.showingTitle}
-                            currentTitle={reader.getCurrentTitle()}
-                            shouldAutoplay={reader.state.isPlaying && !reader.state.showingTitle}
-                            isLoadingProgress={reader.state.isLoadingProgress}
-                        />
-                    </Box>
+                        {/* Center area - words presentation */}
+                        <Box
+                            flex="1"
+                            display="flex"
+                            flexDirection="column"
+                            alignItems="center"
+                            justifyContent="center"
+                            overflow="hidden"
+                        >
+                            <ReaderMainPanel
+                                key={`${reader.state.volumeId}-${reader.state.chapterId}`}
+                                book={book}
+                                volumeId={reader.state.volumeId}
+                                chapterId={reader.state.chapterId}
+                                initialWPM={settings.initWPM}
+                                autoStopOnSentenceEnd={autoStopMode === 'sentence' || autoStopMode === 'paragraph'}
+                                autoStopOnParagraphEnd={autoStopMode === 'paragraph'}
+                                onPlaybackReady={handlePlaybackReady}
+                                showChapterView={showChapterView}
+                                onToggleChapterView={handleToggleChapterView}
+                                showingTitle={reader.state.showingTitle}
+                                currentTitle={reader.getCurrentTitle()}
+                                shouldAutoplay={reader.state.isPlaying && !reader.state.showingTitle}
+                                isLoadingProgress={reader.state.isLoadingProgress}
+                            />
+                        </Box>
 
-                    {/* Bottom panel - controls */}
-                    {playbackControls && (
-                        <>
+                        {/* Bottom panel - controls */}
+                        {playbackControls && (
                             <ReaderControlsPanel
                                 ref={controlsPanelRef}
                                 isPlaying={reader.state.showingTitle ? false : playbackControls.isPlaying}
@@ -241,16 +237,19 @@ export function Reader() {
                                 disabled={false}
                                 onViewChange={handleControlsViewChange}
                             />
-                            {/* Footer - playback state info */}
-                            <PlaybackStateInfo
-                                currentSentenceIndex={playbackControls.currentSentenceIndex}
-                                maxSentenceIndex={playbackControls.maxSentenceIndex}
-                                wpm={playbackControls.wpm}
-                                showChapterView={showChapterView}
-                                onToggleChapterView={handleToggleChapterView}
-                                onOpenSettings={handleOpenSettings}
-                            />
-                        </>
+                        )}
+                    </Box>
+
+                    {/* Footer - playback state info */}
+                    {playbackControls && (
+                        <ReaderFooter
+                            currentSentenceIndex={playbackControls.currentSentenceIndex}
+                            maxSentenceIndex={playbackControls.maxSentenceIndex}
+                            wpm={playbackControls.wpm}
+                            showChapterView={showChapterView}
+                            onToggleChapterView={handleToggleChapterView}
+                            onOpenSettings={handleOpenSettings}
+                        />
                     )}
                 </Flex>
             </Container>

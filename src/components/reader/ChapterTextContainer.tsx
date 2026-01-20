@@ -8,7 +8,7 @@ import type { ChapterTextViewProps } from './types';
  * Provides the scrollable box styling and layout
  */
 export function ChapterTextContainer(props: ChapterTextViewProps) {
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
   return (
     <Box
@@ -17,7 +17,7 @@ export function ChapterTextContainer(props: ChapterTextViewProps) {
       flex="1"
       minH="200px"
       maxH="300px"
-      p={4}
+      py={4}
       bg="gray.50"
       _dark={{ bg: 'gray.800', borderColor: 'gray.700' }}
       borderRadius="md"
@@ -25,7 +25,7 @@ export function ChapterTextContainer(props: ChapterTextViewProps) {
       borderColor="gray.200"
       overflowY="auto"
     >
-      <ChapterTextView {...props} scrollContainerRef={scrollContainerRef} />
+      <ChapterTextView {...props} scrollContainerRef={scrollContainerRef as React.RefObject<HTMLDivElement | null>} />
     </Box>
   );
 }

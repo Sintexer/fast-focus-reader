@@ -1,4 +1,4 @@
-import { Box, Heading, Text, VStack } from '@chakra-ui/react';
+import { Heading, VStack } from '@chakra-ui/react';
 
 export interface TitleDisplayProps {
   title: string;

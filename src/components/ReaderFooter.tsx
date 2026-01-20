@@ -1,23 +1,31 @@
 import { Box, Text, HStack, Flex, IconButton } from '@chakra-ui/react';
 import { BsFileText, BsGear } from 'react-icons/bs';
-import { Tooltip } from '../ui/tooltip';
-import type { PlaybackStateInfoProps } from './types';
+import { Tooltip } from './ui/tooltip';
+
+export interface ReaderFooterProps {
+  currentSentenceIndex: number;
+  maxSentenceIndex: number;
+  wpm: number;
+  showChapterView?: boolean;
+  onToggleChapterView?: () => void;
+  onOpenSettings?: () => void;
+}
 
 /**
- * Component that displays playback state information
- * Shows sentence number and WPM with toggle buttons for chapter view and settings
- * Layout: [Chapter Toggle | Sentence] • [WPM | Settings Toggle]
+ * Footer component for the reader
+ * Displays playback state information (sentence number, WPM) with toggle buttons
+ * Autonomous component with its own padding
  */
-export function PlaybackStateInfo({
+export function ReaderFooter({
   currentSentenceIndex,
   maxSentenceIndex,
   wpm,
   showChapterView = false,
   onToggleChapterView,
   onOpenSettings,
-}: PlaybackStateInfoProps) {
+}: ReaderFooterProps) {
   return (
-    <Box w="100%" p={2}>
+    <Box w="100%" py={2} px={2}>
       <HStack justifyContent="center" alignItems="center" gap={2} w="100%">
         {/* Left flex: space-between with chapter toggle and sentence number */}
         <Flex flex="1" justifyContent="space-between" alignItems="center" gap={2}>
@@ -32,7 +40,7 @@ export function PlaybackStateInfo({
                 colorPalette="gray"
                 minW="auto"
                 h="auto"
-                p={1}
+                p={0}
                 opacity={showChapterView ? 1 : 0.4}
                 _hover={{ opacity: 1 }}
               >
@@ -70,7 +78,7 @@ export function PlaybackStateInfo({
                 colorPalette="gray"
                 minW="auto"
                 h="auto"
-                p={1}
+                p={0}
                 opacity={0.4}
                 _hover={{ opacity: 1 }}
               >

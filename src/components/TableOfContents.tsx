@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
-import { Box, Button, Text, HStack, VStack, Drawer, TreeView, createTreeCollection, Icon } from '@chakra-ui/react';
-import { FaArrowLeft } from 'react-icons/fa';
+import { Button, Text, Drawer, TreeView, createTreeCollection, Icon, CloseButton, VStack } from '@chakra-ui/react';
 import type { Book } from '../utils/db';
+import { BsArrowReturnLeft } from 'react-icons/bs';
+import { LuChevronRight } from 'react-icons/lu';
 
 export interface TableOfContentsProps {
   book: Book | null;
@@ -122,47 +123,32 @@ export function TableOfContents({
     >
       <Drawer.Backdrop />
       <Drawer.Positioner>
-        <Drawer.Content>
-          <Drawer.Header>
-            <VStack gap={3} alignItems="stretch" w="100%">
-              {/* Back to Library button */}
-              {onBackToLibrary && (
-                <Button
-                  onClick={onBackToLibrary}
-                  size="sm"
-                  variant="outline"
-                  colorPalette="gray"
-                  leftIcon={<Icon as={FaArrowLeft} />}
-                >
-                  Library
-                </Button>
+        <Drawer.Content p={2}>
+          <Drawer.Header p={0} position="relative">
+            <VStack alignItems="start" gap={0} pt={4} pl={4} pr={16} pb={4}>
+              <Drawer.Title fontSize="lg" fontWeight="bold">
+                {book.title}
+              </Drawer.Title>
+              {book.author && (
+                <Text fontSize="sm" color="gray.600" _dark={{ color: 'gray.400' }}>
+                  {book.author}
+                </Text>
               )}
-              
-              <HStack justifyContent="space-between" alignItems="flex-start" w="100%">
-                <Box flex="1">
-                  <Drawer.Title fontSize="lg" fontWeight="bold">
-                    {book.title}
-                  </Drawer.Title>
-                  {book.author && (
-                    <Text fontSize="sm" color="gray.600" _dark={{ color: 'gray.400' }} mt={1}>
-                      {book.author}
-                    </Text>
-                  )}
-                </Box>
-                <Drawer.CloseTrigger asChild>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    minW="auto"
-                    px={2}
-                  >
-                    ✕
-                  </Button>
-                </Drawer.CloseTrigger>
-              </HStack>
             </VStack>
+            <Drawer.CloseTrigger asChild>
+              <CloseButton 
+                size="sm" 
+                position="absolute"
+                top={0}
+                right={0}
+                pb={2}
+                pl={2}
+                pr={0}
+                pt={0}
+              />
+            </Drawer.CloseTrigger>
           </Drawer.Header>
-          <Drawer.Body>
+          <Drawer.Body p={0} pt={4} pl={4} pr={4} pb={4}>
             <TreeView.Root
               collection={collection}
               selectionMode="single"
@@ -182,7 +168,11 @@ export function TableOfContents({
                       // Branch node (volume with chapters)
                       return (
                         <TreeView.BranchControl>
-                          <TreeView.BranchTrigger />
+                          <TreeView.BranchTrigger>
+                            <TreeView.BranchIndicator asChild>
+                              <Icon><LuChevronRight /></Icon>
+                            </TreeView.BranchIndicator>
+                          </TreeView.BranchTrigger>
                           <TreeView.BranchText
                             fontWeight={treeNode.id === currentVolumeId ? 'bold' : 'normal'}
                           >
@@ -203,6 +193,19 @@ export function TableOfContents({
               </TreeView.Tree>
             </TreeView.Root>
           </Drawer.Body>
+          {onBackToLibrary && (
+            <Drawer.Footer p={0}>
+              <Button
+                onClick={onBackToLibrary}
+                size="sm"
+                variant="outline"
+                colorPalette="red"
+              >
+                <Icon><BsArrowReturnLeft /></Icon>
+                Back to library
+              </Button>
+            </Drawer.Footer>
+          )}
         </Drawer.Content>
       </Drawer.Positioner>
     </Drawer.Root>
