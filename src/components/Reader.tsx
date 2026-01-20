@@ -131,14 +131,14 @@ export function Reader() {
         if (!playbackControls) {
             return false;
         }
-        const isAtChapterEnd = reader.isAtChapterEnd() || 
-            (playbackControls.currentSentenceIndex >= playbackControls.maxSentenceIndex);
+        // Only enable button if we're actually at the end of a sentence
+        // For chapter end, use reader.isAtChapterEnd() which checks if we're at the last word of the last sentence
+        // For regular sentence ends, use playbackControls.isStoppedAtSentenceEnd
+        const isAtChapterEnd = reader.isAtChapterEnd();
         return isAtChapterEnd ? true : playbackControls.isStoppedAtSentenceEnd;
     }, [
         reader.state.showingTitle, 
         reader.isAtChapterEnd, 
-        playbackControls?.currentSentenceIndex, 
-        playbackControls?.maxSentenceIndex, 
         playbackControls?.isStoppedAtSentenceEnd
     ]);
 
