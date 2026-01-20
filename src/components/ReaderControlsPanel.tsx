@@ -56,13 +56,13 @@ export const ReaderControlsPanel = forwardRef<ReaderControlsPanelRef, ReaderCont
     }));
 
     if (isMinimalView) {
-      return (
-        <Box px={4} py={4} w="100%" display="flex" justifyContent="center">
+      return ( // todo fix up the sticcky next button in simple view - it attached to the right border
+        <Box py={4} px={8} w="100%" display="flex" justifyContent="center">
           <Flex
             w="100%"
             maxW={{ base: "100%", sm: "30rem" }}
             alignItems="stretch"
-            gap={4}
+            gap={3}
           >
             {/* Left side: Play and Reset buttons stacked vertically - 50% width */}
             <VStack 
@@ -80,14 +80,13 @@ export const ReaderControlsPanel = forwardRef<ReaderControlsPanelRef, ReaderCont
                 <IconButton
                   aria-label={isPlaying ? 'Pause' : 'Play'}
                   onClick={isPlaying ? onPause : onPlay}
-                  disabled={disabled}
+                  disabled={disabled || (!isPlaying && isStoppedAtSentenceEnd)}
                   size="lg"
                   variant="ghost"
                   colorPalette="gray"
                   rounded="md"
                   w="100%"
                   h="auto"
-                  minH="72px"
                   flex="1"
                 >
                   {isPlaying ? <FaPause /> : <FaPlay />}
@@ -110,7 +109,6 @@ export const ReaderControlsPanel = forwardRef<ReaderControlsPanelRef, ReaderCont
                   rounded="md"
                   w="100%"
                   h="auto"
-                  minH="72px"
                   flex="1"
                 >
                   <FaRedo />
@@ -119,29 +117,30 @@ export const ReaderControlsPanel = forwardRef<ReaderControlsPanelRef, ReaderCont
             </VStack>
 
             {/* Right side: Large Next button for mobile thumb - 50% width */}
-            <Tooltip 
-              content="Next Sentence" 
-              positioning={{ placement: 'top' }}
-              disabled={disabled || !isStoppedAtSentenceEnd}
-            >
-              <IconButton
-                aria-label="Next Sentence"
-                onClick={onAdvanceToNextSentence}
+            <Flex grow={1}>
+              <Tooltip
+                content="Next Sentence"
+                positioning={{ placement: 'top' }}
                 disabled={disabled || !isStoppedAtSentenceEnd}
-                size="xl"
-                variant="ghost"
-                colorPalette={disabled || !isStoppedAtSentenceEnd ? "gray" : "green"}
-                bg={disabled || !isStoppedAtSentenceEnd ? "gray.50" : "green.50"}
-                _dark={{ bg: disabled || !isStoppedAtSentenceEnd ? "gray.800" : "green.950" }}
-                rounded="md"
-                flex="0 0 50%"
-                w="100%"
-                h="auto"
-                minH="144px"
               >
-                <FaArrowRight />
-              </IconButton>
-            </Tooltip>
+                <IconButton
+                  aria-label="Next Sentence"
+                  onClick={onAdvanceToNextSentence}
+                  disabled={disabled || !isStoppedAtSentenceEnd}
+                  size="xl"
+                  variant="ghost"
+                  colorPalette={disabled || !isStoppedAtSentenceEnd ? "gray" : "green"}
+                  bg={disabled || !isStoppedAtSentenceEnd ? "gray.50" : "green.50"}
+                  _dark={{ bg: disabled || !isStoppedAtSentenceEnd ? "gray.800" : "green.950" }}
+                  rounded="md"
+                  w="100%"
+                  h="auto"
+                  minH="144px"
+                >
+                  <FaArrowRight />
+                </IconButton>
+              </Tooltip>
+            </Flex>
           </Flex>
         </Box>
       );

@@ -1,4 +1,5 @@
 import { Box, Text, Mark } from '@chakra-ui/react';
+import { useRef, useEffect } from 'react';
 import type { ChapterTextViewProps } from './types';
 
 /**
@@ -10,6 +11,7 @@ export function ChapterTextView({
   chapterText,
   currentWord,
   currentSentence,
+  scrollContainerRef,
 }: ChapterTextViewProps) {
   if (!currentWord || !chapterText) {
     return (
@@ -44,6 +46,37 @@ export function ChapterTextView({
   const sentenceTextAfterWord = chapterText.slice(wordEnd, sentenceEnd);
   const textAfterSentence = chapterText.slice(sentenceEnd);
 
+  const sentenceRef = useRef<HTMLSpanElement>(null);
+
+  // Scroll to current sentence when it changes
+  useEffect(() => {
+    if (sentenceRef.current && scrollContainerRef?.current) {
+      const sentenceElement = sentenceRef.current;
+      const container = scrollContainerRef.current;
+      
+      // Use requestAnimationFrame to ensure DOM is fully rendered
+      requestAnimationFrame(() => {
+        // Calculate position relative to container
+        const containerRect = container.getBoundingClientRect();
+        const sentenceRect = sentenceElement.getBoundingClientRect();
+        
+        // Calculate scroll position to center the sentence in the viewport
+        const scrollTop = container.scrollTop;
+        const sentenceTop = sentenceRect.top - containerRect.top + scrollTop;
+        const sentenceHeight = sentenceRect.height;
+        const containerHeight = container.clientHeight;
+        
+        // Center the sentence in the viewport
+        const targetScrollTop = sentenceTop - (containerHeight / 2) + (sentenceHeight / 2);
+        
+        container.scrollTo({
+          top: Math.max(0, targetScrollTop),
+          behavior: 'smooth',
+        });
+      });
+    }
+  }, [currentSentence, currentWord, scrollContainerRef]);
+
   return (
     <Text
       fontSize="sm"
@@ -54,6 +87,7 @@ export function ChapterTextView({
     >
       {textBeforeSentence}
       <Box
+        ref={sentenceRef}
         as="span"
         color="blue.600"
         _dark={{ color: 'blue.400' }}

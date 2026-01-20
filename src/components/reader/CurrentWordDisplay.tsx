@@ -13,11 +13,14 @@ export function CurrentWordDisplay({
     <Box
       w="100%"
       p={6}
-      bg="gray.50"
-      _dark={{ bg: 'gray.800', borderColor: 'gray.700' }}
-      borderRadius="lg"
-      borderWidth="1px"
-      borderColor="gray.200"
+      borderTopWidth="1px"
+      borderBottomWidth="1px"
+      borderTopColor="gray.200"
+      borderBottomColor="gray.200"
+      _dark={{ 
+        borderTopColor: 'gray.700',
+        borderBottomColor: 'gray.700'
+      }}
       display="flex"
       alignItems="center"
       justifyContent="center"

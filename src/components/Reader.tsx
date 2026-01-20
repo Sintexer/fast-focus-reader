@@ -4,7 +4,7 @@ import {useReader} from '../hooks/useReader';
 import {type Book, getBook, getSettingsOrDefault, type Settings} from '../utils/db';
 import {ReaderMainPanel} from './ReaderMainPanel';
 import {ReaderControlsPanel, type ReaderControlsPanelRef} from './ReaderControlsPanel';
-import {Box, Button, Container, Flex, HStack, Text} from '@chakra-ui/react';
+import {Box, Container, Flex, HStack, Text} from '@chakra-ui/react';
 import {TableOfContents} from './TableOfContents';
 import {BookLocation} from './BookLocation';
 import {PlaybackStateInfo} from './reader/PlaybackStateInfo';
@@ -113,10 +113,11 @@ export function Reader() {
                 onChapterClick={reader.goToChapter}
                 isOpen={tocOpen}
                 onToggle={() => setTocOpen(!tocOpen)}
+                onBackToLibrary={() => navigate('/', {replace: false})}
             />
 
             <Container
-                maxW={{base: "100%", sm: "640px", md: "768px", lg: "1024px", xl: "1280px", "2xl": "1536px"}}
+                maxW={{base: "100%", lg: "1024px", xl: "1280px", "2xl": "1536px"}}
                 h="100vh"
                 p={0}
                 centerContent={false}
@@ -130,17 +131,8 @@ export function Reader() {
                 >
                     {/* Top panel - config and location */}
                     <Box>
-                        <Box p={4}>
-                            <HStack justifyContent="space-between" alignItems="center" mb={2}>
-                                <HStack gap={3} alignItems="center">
-                                    <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        onClick={() => navigate('/', {replace: false})}
-                                    >
-                                        ← Library
-                                    </Button>
-                                </HStack>
+                        <Box p={2}>
+                            <HStack justifyContent="flex-end" alignItems="center" mb={2}>
                                 <Box
                                     onClick={() => setTocOpen(!tocOpen)}
                                     cursor="pointer"

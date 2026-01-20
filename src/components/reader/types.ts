@@ -27,6 +27,7 @@ export interface ChapterTextViewProps {
   chapterText: string;
   currentWord: ProcessedWord | null;
   currentSentence: ProcessedWord[] | null;
+  scrollContainerRef?: React.RefObject<HTMLDivElement>;
 }
 
 /**

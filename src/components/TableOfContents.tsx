@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
-import { Box, Button, Text, HStack, Drawer, TreeView, createTreeCollection } from '@chakra-ui/react';
+import { Box, Button, Text, HStack, VStack, Drawer, TreeView, createTreeCollection, Icon } from '@chakra-ui/react';
+import { FaArrowLeft } from 'react-icons/fa';
 import type { Book } from '../utils/db';
 
 export interface TableOfContentsProps {
@@ -9,6 +10,7 @@ export interface TableOfContentsProps {
   onChapterClick: (volumeId: string, chapterId: string) => void;
   isOpen: boolean;
   onToggle: () => void;
+  onBackToLibrary?: () => void;
 }
 
 interface TreeNode {
@@ -26,6 +28,7 @@ export function TableOfContents({
   onChapterClick,
   isOpen,
   onToggle,
+  onBackToLibrary,
 }: TableOfContentsProps) {
   // Check if book has a single mock volume (should be ignored in display)
   const hasRealVolumes = useMemo(() => {
@@ -121,28 +124,43 @@ export function TableOfContents({
       <Drawer.Positioner>
         <Drawer.Content>
           <Drawer.Header>
-            <HStack justifyContent="space-between" alignItems="flex-start" w="100%">
-              <Box flex="1">
-                <Drawer.Title fontSize="lg" fontWeight="bold">
-                  {book.title}
-                </Drawer.Title>
-                {book.author && (
-                  <Text fontSize="sm" color="gray.600" _dark={{ color: 'gray.400' }} mt={1}>
-                    {book.author}
-                  </Text>
-                )}
-              </Box>
-              <Drawer.CloseTrigger asChild>
+            <VStack gap={3} alignItems="stretch" w="100%">
+              {/* Back to Library button */}
+              {onBackToLibrary && (
                 <Button
+                  onClick={onBackToLibrary}
                   size="sm"
-                  variant="ghost"
-                  minW="auto"
-                  px={2}
+                  variant="outline"
+                  colorPalette="gray"
+                  leftIcon={<Icon as={FaArrowLeft} />}
                 >
-                  ✕
+                  Library
                 </Button>
-              </Drawer.CloseTrigger>
-            </HStack>
+              )}
+              
+              <HStack justifyContent="space-between" alignItems="flex-start" w="100%">
+                <Box flex="1">
+                  <Drawer.Title fontSize="lg" fontWeight="bold">
+                    {book.title}
+                  </Drawer.Title>
+                  {book.author && (
+                    <Text fontSize="sm" color="gray.600" _dark={{ color: 'gray.400' }} mt={1}>
+                      {book.author}
+                    </Text>
+                  )}
+                </Box>
+                <Drawer.CloseTrigger asChild>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    minW="auto"
+                    px={2}
+                  >
+                    ✕
+                  </Button>
+                </Drawer.CloseTrigger>
+              </HStack>
+            </VStack>
           </Drawer.Header>
           <Drawer.Body>
             <TreeView.Root

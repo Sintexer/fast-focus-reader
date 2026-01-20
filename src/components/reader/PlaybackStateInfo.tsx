@@ -1,6 +1,5 @@
 import { Box, Text, HStack, Flex, IconButton } from '@chakra-ui/react';
 import { BsFileText, BsGear } from 'react-icons/bs';
-import { FaCog } from 'react-icons/fa';
 import { Tooltip } from '../ui/tooltip';
 import type { PlaybackStateInfoProps } from './types';
 
@@ -57,7 +56,7 @@ export function PlaybackStateInfo({
         <Flex flex="1" justifyContent="space-between" alignItems="center" gap={2}>
           {/* WPM */}
           <Text fontSize="xs" color="gray.500" _dark={{ color: 'gray.400' }}>
-            {wpm} WPM
+            Speed: {wpm} WPM
           </Text>
 
           {/* Settings button */}

@@ -1,4 +1,5 @@
 import { Box } from '@chakra-ui/react';
+import { useRef } from 'react';
 import { ChapterTextView } from './ChapterTextView';
 import type { ChapterTextViewProps } from './types';
 
@@ -7,8 +8,11 @@ import type { ChapterTextViewProps } from './types';
  * Provides the scrollable box styling and layout
  */
 export function ChapterTextContainer(props: ChapterTextViewProps) {
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
   return (
     <Box
+      ref={scrollContainerRef}
       w="100%"
       flex="1"
       minH="200px"
@@ -21,7 +25,7 @@ export function ChapterTextContainer(props: ChapterTextViewProps) {
       borderColor="gray.200"
       overflowY="auto"
     >
-      <ChapterTextView {...props} />
+      <ChapterTextView {...props} scrollContainerRef={scrollContainerRef} />
     </Box>
   );
 }
