@@ -1,4 +1,5 @@
 import { HStack, Text, Switch } from '@chakra-ui/react';
+import { useI18n } from '../../i18n/useI18n';
 
 type UploadMode = 'file' | 'text';
 
@@ -8,12 +9,14 @@ export interface UploadModeSwitchProps {
 }
 
 export function UploadModeSwitch({ mode, onModeChange }: UploadModeSwitchProps) {
+  const { t } = useI18n();
+  
   return (
     <HStack justify="space-between" align="center">
-      <Text>Upload Mode:</Text>
+      <Text>{t('uploadMode')}</Text>
       <HStack>
         <Text fontSize="sm" color={mode === 'file' ? 'blue.500' : 'gray.500'}>
-          File Upload
+          {t('fileUpload')}
         </Text>
         <Switch.Root
           checked={mode === 'text'}
@@ -27,7 +30,7 @@ export function UploadModeSwitch({ mode, onModeChange }: UploadModeSwitchProps) 
           </Switch.Control>
         </Switch.Root>
         <Text fontSize="sm" color={mode === 'text' ? 'blue.500' : 'gray.500'}>
-          Text Input
+          {t('textInput')}
         </Text>
       </HStack>
     </HStack>

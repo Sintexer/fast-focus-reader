@@ -54,6 +54,8 @@ export interface Settings {
   warmupDuration: number; // milliseconds
 }
 
+export type Locale = 'en' | 'ru';
+
 interface ReaderDB extends DBSchema {
   texts: {
     key: string;
@@ -73,10 +75,14 @@ interface ReaderDB extends DBSchema {
     key: string;
     value: Settings;
   };
+  locale: {
+    key: string;
+    value: Locale;
+  };
 }
 
 const DB_NAME = 'fast-focus-reader';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 let dbPromise: Promise<IDBPDatabase<ReaderDB>> | null = null;
 
@@ -107,6 +113,11 @@ function getDB(): Promise<IDBPDatabase<ReaderDB>> {
         // Settings store (single entry with key 'default')
         if (!db.objectStoreNames.contains('settings')) {
           db.createObjectStore('settings');
+        }
+        
+        // Locale store (single entry with key 'default')
+        if (!db.objectStoreNames.contains('locale')) {
+          db.createObjectStore('locale');
         }
       },
     });
@@ -203,4 +214,17 @@ export async function getSettingsOrDefault(): Promise<Settings> {
   
   await saveSettings(defaultSettings);
   return defaultSettings;
+}
+
+// Locale operations
+const LOCALE_KEY = 'default';
+
+export async function saveLocale(locale: Locale): Promise<void> {
+  const db = await getDB();
+  await db.put('locale', locale, LOCALE_KEY);
+}
+
+export async function getLocale(): Promise<Locale | undefined> {
+  const db = await getDB();
+  return db.get('locale', LOCALE_KEY);
 }

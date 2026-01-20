@@ -1,5 +1,6 @@
 import { VStack, Heading, Button, Icon } from '@chakra-ui/react';
 import { BsArrowReturnLeft } from 'react-icons/bs';
+import { useI18n } from '../../i18n/useI18n';
 
 export interface BookEndProps {
   onBackToLibrary: () => void;
@@ -11,6 +12,8 @@ export interface BookEndProps {
  * Positioned in the same space where the current word is displayed
  */
 export function BookEnd({ onBackToLibrary }: BookEndProps) {
+  const { t } = useI18n();
+  
   return (
     <VStack
       gap={6}
@@ -27,7 +30,7 @@ export function BookEnd({ onBackToLibrary }: BookEndProps) {
         _dark={{ color: 'gray.300' }}
         textAlign="center"
       >
-        The End
+        {t('theEnd')}
       </Heading>
       
       {/* Back to library button */}
@@ -38,7 +41,7 @@ export function BookEnd({ onBackToLibrary }: BookEndProps) {
         colorPalette="red"
       >
         <Icon><BsArrowReturnLeft /></Icon>
-        Back to library
+        {t('backToLibrary')}
       </Button>
     </VStack>
   );

@@ -12,11 +12,13 @@ import {BookEnd} from './reader/BookEnd';
 import {SettingsDrawer} from './settings/SettingsDrawer';
 import type {PlaybackControls} from './reader/types';
 import type {AutoStopMode} from './settings/types';
+import {useI18n} from '../i18n/useI18n';
 
 export function Reader() {
     const {bookId} = useParams<{ bookId: string }>();
     const navigate = useNavigate();
     const location = useLocation();
+    const { t } = useI18n();
     const [book, setBook] = useState<Book | null>(null);
     const [settings, setSettings] = useState<Settings | null>(null);
     const [tocOpen, setTocOpen] = useState(false);
@@ -196,7 +198,7 @@ export function Reader() {
     if (loading || !settings || !book || reader.state.isLoadingProgress) {
         return (
             <Container maxW="container.xl" py={8} h="100vh" display="flex" alignItems="center" justifyContent="center">
-                <Text>Loading...</Text>
+                <Text>{t('loading')}</Text>
             </Container>
         );
     }

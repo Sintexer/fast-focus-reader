@@ -3,6 +3,7 @@ import { AutoStopSettings } from './AutoStopSettings';
 import { ThemeSettings } from './ThemeSettings';
 import { ReaderControlsSettings } from './ReaderControlsSettings';
 import type { SettingsDrawerProps } from './types';
+import { useI18n } from '../../i18n/useI18n';
 
 /**
  * Settings drawer component that slides up from the bottom
@@ -16,6 +17,8 @@ export function SettingsDrawer({
   showControls,
   onShowControlsChange,
 }: SettingsDrawerProps) {
+  const { t } = useI18n();
+  
   return (
     <Drawer.Root open={isOpen} onOpenChange={(e) => (!e.open && onClose())} placement="bottom">
       <Portal>
@@ -23,7 +26,7 @@ export function SettingsDrawer({
         <Drawer.Positioner>
           <Drawer.Content maxH="80vh" roundedTop="lg">
             <Drawer.Header>
-              <Drawer.Title>Settings</Drawer.Title>
+              <Drawer.Title>{t('settings')}</Drawer.Title>
               <Drawer.CloseTrigger asChild>
                 <CloseButton size="sm" />
               </Drawer.CloseTrigger>

@@ -1,0 +1,83 @@
+export const en = {
+  // Library
+  library: 'Library',
+  uploadBook: 'Upload Book',
+  loadingBooks: 'Loading books...',
+  noBooksAvailable: 'No books available. Please add a book to get started.',
+  chapters: 'chapters',
+  
+  // Reader
+  loading: 'Loading...',
+  theEnd: 'The End',
+  backToLibrary: 'Back to library',
+  sentence: 'Sentence',
+  of: 'of',
+  speed: 'Speed',
+  wpm: 'WPM',
+  noChapterContent: 'No chapter content available',
+  
+  // Controls
+  play: 'Play',
+  pause: 'Pause',
+  nextWord: 'Next Word',
+  previousWord: 'Previous Word',
+  nextSentence: 'Next Sentence',
+  previousSentence: 'Previous Sentence',
+  restartSentence: 'Restart Sentence',
+  resetToBeginning: 'Reset to beginning',
+  showChapterView: 'Show chapter view (T)',
+  hideChapterView: 'Hide chapter view (T)',
+  openSettings: 'Open settings',
+  
+  // Settings
+  settings: 'Settings',
+  autoStop: 'Auto-stop',
+  autoStopDescription: 'Control when playback automatically stops',
+  disabled: 'Disabled',
+  sentenceEnd: 'Sentence End',
+  paragraphEnd: 'Paragraph End',
+  advancedControls: 'Advanced Controls',
+  advancedControlsDescription: 'Show advanced playback controls (word navigation, reset, etc.)',
+  theme: 'Theme',
+  themeDescription: 'Choose your preferred color theme',
+  light: 'Light',
+  dark: 'Dark',
+  system: 'System',
+  
+  // Book Upload
+  selectFile: 'Select File',
+  chooseFile: 'Choose File',
+  supportedFileTypes: 'Supported file types',
+  pasteText: 'Paste Text',
+  pasteTextPlaceholder: 'Paste your book text here...',
+  processText: 'Process Text',
+  bookInformation: 'Book Information',
+  title: 'Title',
+  titlePlaceholder: 'Enter book title',
+  author: 'Author',
+  authorPlaceholder: 'Enter author name',
+  language: 'Language',
+  english: 'English',
+  russian: 'Russian',
+  cancel: 'Cancel',
+  saveBook: 'Save Book',
+  bookSavedSuccessfully: 'Book saved successfully',
+  uploadMode: 'Upload Mode:',
+  fileUpload: 'File Upload',
+  textInput: 'Text Input',
+  previewFirstChapters: 'Preview (First Chapters)',
+  noPreviewAvailable: 'No preview available',
+  previewDescription: 'This preview shows the first few paragraphs to help verify the import. The content cannot be edited here.',
+  unsupportedFileType: 'Unsupported file type. Supported types: {types}',
+  failedToProcessFile: 'Failed to process file: {error}',
+  failedToProcessText: 'Failed to process text: {error}',
+  failedToSaveBook: 'Failed to save book: {error}',
+  pleaseEnterText: 'Please enter some text',
+  untitledBook: 'Untitled Book',
+  
+  // Language Selection
+  selectLanguage: 'Select Language',
+  
+  // Common
+  required: 'Required',
+} as const;

@@ -1,6 +1,7 @@
 import { Box, Text, HStack, Flex, IconButton } from '@chakra-ui/react';
 import { BsFileText, BsGear } from 'react-icons/bs';
 import { Tooltip } from '../ui/tooltip';
+import { useI18n } from '../../i18n/useI18n';
 
 export interface ReaderFooterProps {
   currentSentenceIndex: number;
@@ -24,6 +25,8 @@ export function ReaderFooter({
   onToggleChapterView,
   onOpenSettings,
 }: ReaderFooterProps) {
+  const { t } = useI18n();
+  
   return (
     <Box w="100%" py={2} px={2}>
       <HStack justifyContent="center" alignItems="center" gap={2} w="100%">
@@ -31,9 +34,9 @@ export function ReaderFooter({
         <Flex flex="1" justifyContent="space-between" alignItems="center" gap={2}>
           {/* Toggle button for chapter view */}
           {onToggleChapterView && (
-            <Tooltip content={showChapterView ? 'Hide chapter view (T)' : 'Show chapter view (T)'}>
+            <Tooltip content={showChapterView ? t('hideChapterView') : t('showChapterView')}>
               <IconButton
-                aria-label={showChapterView ? 'Hide chapter view' : 'Show chapter view'}
+                aria-label={showChapterView ? t('hideChapterView') : t('showChapterView')}
                 onClick={onToggleChapterView}
                 size="xs"
                 variant="ghost"
@@ -51,7 +54,7 @@ export function ReaderFooter({
           
           {/* Sentence number */}
           <Text fontSize="xs" color="gray.500" _dark={{ color: 'gray.400' }}>
-            Sentence {currentSentenceIndex + 1} of {maxSentenceIndex + 1}
+            {t('sentence')} {currentSentenceIndex + 1} {t('of')} {maxSentenceIndex + 1}
           </Text>
         </Flex>
 
@@ -64,14 +67,14 @@ export function ReaderFooter({
         <Flex flex="1" justifyContent="space-between" alignItems="center" gap={2}>
           {/* WPM */}
           <Text fontSize="xs" color="gray.500" _dark={{ color: 'gray.400' }}>
-            Speed: {wpm} WPM
+            {t('speed')}: {wpm} {t('wpm')}
           </Text>
 
           {/* Settings button */}
           {onOpenSettings && (
-            <Tooltip content="Open settings">
+            <Tooltip content={t('openSettings')}>
               <IconButton
-                aria-label="Open settings"
+                aria-label={t('openSettings')}
                 onClick={onOpenSettings}
                 size="xs"
                 variant="ghost"

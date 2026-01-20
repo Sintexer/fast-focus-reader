@@ -19,6 +19,7 @@ import { toaster } from '../ui/toaster';
 import { UploadModeSwitch } from './UploadModeSwitch';
 import { BookPreview } from './BookPreview';
 import { BookUploadForm } from './BookUploadForm';
+import { useI18n } from '../../i18n/useI18n';
 
 type UploadMode = 'file' | 'text';
 
@@ -31,6 +32,7 @@ interface BookUploadProps {
 }
 
 export function BookUpload({ isOpen, onClose, onBookSaved }: BookUploadProps) {
+  const { t } = useI18n();
   const [uploadMode, setUploadMode] = useState<UploadMode>('file');
   const [textInput, setTextInput] = useState('');
   const [book, setBook] = useState<Book | null>(null);
@@ -49,7 +51,7 @@ export function BookUpload({ isOpen, onClose, onBookSaved }: BookUploadProps) {
     // Validate file type
     const fileExtension = selectedFile.name.toLowerCase().slice(selectedFile.name.lastIndexOf('.'));
     if (!SUPPORTED_FILE_TYPES.includes(fileExtension)) {
-      setError(`Unsupported file type. Supported types: ${SUPPORTED_FILE_TYPES.join(', ')}`);
+      setError(t('unsupportedFileType', { types: SUPPORTED_FILE_TYPES.join(', ') }));
       return;
     }
     
@@ -81,7 +83,7 @@ export function BookUpload({ isOpen, onClose, onBookSaved }: BookUploadProps) {
       setAuthor(parsedBook.author || '');
       setLanguage(parsedBook.language);
     } catch (err) {
-      setError(`Failed to process file: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      setError(t('failedToProcessFile', { error: err instanceof Error ? err.message : 'Unknown error' }));
     } finally {
       setLoading(false);
     }
@@ -94,7 +96,7 @@ export function BookUpload({ isOpen, onClose, onBookSaved }: BookUploadProps) {
   
   const handleProcessText = async () => {
     if (!textInput.trim()) {
-      setError('Please enter some text');
+      setError(t('pleaseEnterText'));
       return;
     }
     
@@ -118,7 +120,7 @@ export function BookUpload({ isOpen, onClose, onBookSaved }: BookUploadProps) {
       setAuthor(parsedBook.author || '');
       setLanguage(parsedBook.language);
     } catch (err) {
-      setError(`Failed to process text: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      setError(t('failedToProcessText', { error: err instanceof Error ? err.message : 'Unknown error' }));
     } finally {
       setLoading(false);
     }
@@ -134,7 +136,7 @@ export function BookUpload({ isOpen, onClose, onBookSaved }: BookUploadProps) {
       // Update book with form values
       const updatedBook: Book = {
         ...book,
-        title: title || 'Untitled Book',
+        title: title || t('untitledBook'),
         author: author || undefined,
         language,
       };
@@ -142,7 +144,7 @@ export function BookUpload({ isOpen, onClose, onBookSaved }: BookUploadProps) {
       await saveBook(updatedBook);
       
       toaster.create({
-        title: 'Book saved successfully',
+        title: t('bookSavedSuccessfully'),
         type: 'success',
         duration: 3000,
       });
@@ -151,7 +153,7 @@ export function BookUpload({ isOpen, onClose, onBookSaved }: BookUploadProps) {
       handleClose();
       onBookSaved?.();
     } catch (err) {
-      setError(`Failed to save book: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      setError(t('failedToSaveBook', { error: err instanceof Error ? err.message : 'Unknown error' }));
     } finally {
       setLoading(false);
     }
@@ -176,7 +178,7 @@ export function BookUpload({ isOpen, onClose, onBookSaved }: BookUploadProps) {
         <Dialog.Positioner>
           <Dialog.Content maxH="90vh">
             <Dialog.Header>
-              <Dialog.Title>Upload Book</Dialog.Title>
+              <Dialog.Title>{t('uploadBook')}</Dialog.Title>
               <Dialog.CloseTrigger asChild>
                 <CloseButton size="sm" />
               </Dialog.CloseTrigger>
@@ -201,7 +203,6 @@ export function BookUpload({ isOpen, onClose, onBookSaved }: BookUploadProps) {
                     {uploadMode === 'file' && (
                       <VStack align="stretch" gap={4}>
                         <Field.Root>
-                          <Field.Label>Select File</Field.Label>
                           <FileUpload.Root
                             accept={SUPPORTED_FILE_TYPES.join(',')}
                             onFileChange={handleFileChange}
@@ -210,7 +211,7 @@ export function BookUpload({ isOpen, onClose, onBookSaved }: BookUploadProps) {
                             <FileUpload.HiddenInput />
                             <FileUpload.Trigger asChild>
                               <Button colorPalette="blue" width="full" loading={loading}>
-                                Choose File
+                                {t('chooseFile')}
                               </Button>
                             </FileUpload.Trigger>
                             <FileUpload.List showSize clearable />
@@ -218,7 +219,7 @@ export function BookUpload({ isOpen, onClose, onBookSaved }: BookUploadProps) {
                         </Field.Root>
                         
                         <Text fontSize="xs" color="fg.muted">
-                          Supported file types: {SUPPORTED_FILE_TYPES.join(', ')}
+                          {t('supportedFileTypes')}: {SUPPORTED_FILE_TYPES.join(', ')}
                         </Text>
                       </VStack>
                     )}
@@ -227,11 +228,11 @@ export function BookUpload({ isOpen, onClose, onBookSaved }: BookUploadProps) {
                     {uploadMode === 'text' && (
                       <VStack align="stretch" gap={4}>
                         <Field.Root>
-                          <Field.Label>Paste Text</Field.Label>
+                          <Field.Label>{t('pasteText')}</Field.Label>
                           <Textarea
                             value={textInput}
                             onChange={handleTextInputChange}
-                            placeholder="Paste your book text here..."
+                            placeholder={t('pasteTextPlaceholder')}
                             rows={10}
                             resize="vertical"
                           />
@@ -243,7 +244,7 @@ export function BookUpload({ isOpen, onClose, onBookSaved }: BookUploadProps) {
                           loading={loading}
                           disabled={!textInput.trim()}
                         >
-                          Process Text
+                          {t('processText')}
                         </Button>
                       </VStack>
                     )}
@@ -284,7 +285,7 @@ export function BookUpload({ isOpen, onClose, onBookSaved }: BookUploadProps) {
               <Dialog.Footer>
                 <HStack justify="flex-end" gap={4} width="full">
                   <Button onClick={handleClose} variant="ghost">
-                    Cancel
+                    {t('cancel')}
                   </Button>
                   <Button
                     onClick={handleSave}
@@ -292,7 +293,7 @@ export function BookUpload({ isOpen, onClose, onBookSaved }: BookUploadProps) {
                     loading={loading}
                     disabled={!title.trim()}
                   >
-                    Save Book
+                    {t('saveBook')}
                   </Button>
                 </HStack>
               </Dialog.Footer>

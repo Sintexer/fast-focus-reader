@@ -3,6 +3,7 @@ import { Box, VStack, HStack, IconButton, Flex } from '@chakra-ui/react';
 import { FaPlay, FaPause, FaRedo, FaArrowRight } from 'react-icons/fa';
 import { Tooltip } from '../ui/tooltip';
 import { PlaybackControls } from './PlaybackControls';
+import { useI18n } from '../../i18n/useI18n';
 
 export interface ReaderControlsPanelProps {
   isPlaying: boolean;
@@ -43,6 +44,7 @@ export const ReaderControlsPanel = forwardRef<ReaderControlsPanelRef, ReaderCont
     },
     ref
   ) => {
+    const { t } = useI18n();
     const [isMinimalView, setIsMinimalView] = useState(true);
 
     useImperativeHandle(ref, () => ({
@@ -73,12 +75,12 @@ export const ReaderControlsPanel = forwardRef<ReaderControlsPanelRef, ReaderCont
             >
               {/* Play/Pause button */}
               <Tooltip 
-                content={isPlaying ? 'Pause' : 'Play'} 
+                content={isPlaying ? t('pause') : t('play')} 
                 positioning={{ placement: 'top' }}
                 disabled={disabled}
               >
                 <IconButton
-                  aria-label={isPlaying ? 'Pause' : 'Play'}
+                  aria-label={isPlaying ? t('pause') : t('play')}
                   onClick={isPlaying ? onPause : onPlay}
                   disabled={disabled || (!isPlaying && isStoppedAtSentenceEnd)}
                   size="lg"
@@ -95,12 +97,12 @@ export const ReaderControlsPanel = forwardRef<ReaderControlsPanelRef, ReaderCont
 
               {/* Restart Sentence button */}
               <Tooltip 
-                content="Restart Sentence" 
+                content={t('restartSentence')} 
                 positioning={{ placement: 'top' }}
                 disabled={disabled}
               >
                 <IconButton
-                  aria-label="Restart Sentence"
+                  aria-label={t('restartSentence')}
                   onClick={onRestartSentence}
                   disabled={disabled}
                   colorPalette="gray"
@@ -119,12 +121,12 @@ export const ReaderControlsPanel = forwardRef<ReaderControlsPanelRef, ReaderCont
             {/* Right side: Large Next button for mobile thumb - 50% width */}
             <Flex grow={1}>
               <Tooltip
-                content="Next Sentence"
+                content={t('nextSentence')}
                 positioning={{ placement: 'top' }}
                 disabled={disabled || !isStoppedAtSentenceEnd}
               >
                 <IconButton
-                  aria-label="Next Sentence"
+                  aria-label={t('nextSentence')}
                   onClick={onAdvanceToNextSentence}
                   disabled={disabled || !isStoppedAtSentenceEnd}
                   size="xl"
@@ -152,12 +154,12 @@ export const ReaderControlsPanel = forwardRef<ReaderControlsPanelRef, ReaderCont
         <HStack gap={2} justifyContent="center" alignItems="center" flexWrap="nowrap">
           {/* Reset button - on the left */}
           <Tooltip 
-            content="Reset to beginning" 
+            content={t('resetToBeginning')} 
             positioning={{ placement: 'top' }}
             disabled={disabled}
           >
             <IconButton
-              aria-label="Reset"
+              aria-label={t('resetToBeginning')}
               onClick={onReset}
               disabled={disabled}
               size="lg"
@@ -183,12 +185,12 @@ export const ReaderControlsPanel = forwardRef<ReaderControlsPanelRef, ReaderCont
 
           {/* Next Sentence button - on the right (from minimal view) */}
           <Tooltip 
-            content="Next Sentence" 
+            content={t('nextSentence')} 
             positioning={{ placement: 'top' }}
             disabled={disabled || !isStoppedAtSentenceEnd}
           >
             <IconButton
-              aria-label="Next Sentence"
+              aria-label={t('nextSentence')}
               onClick={onAdvanceToNextSentence}
               disabled={disabled || !isStoppedAtSentenceEnd}
               size="lg"

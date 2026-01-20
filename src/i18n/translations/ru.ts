@@ -1,0 +1,82 @@
+export const ru = {
+  // Library
+  library: 'Библиотека',
+  uploadBook: 'Загрузить книгу',
+  loadingBooks: 'Загрузка книг...',
+  noBooksAvailable: 'Книги отсутствуют. Пожалуйста, добавьте книгу для начала работы.',
+  chapters: 'глав',
+  
+  // Reader
+  loading: 'Загрузка...',
+  theEnd: 'Конец',
+  backToLibrary: 'Вернуться в библиотеку',
+  sentence: 'Предложение',
+  of: 'из',
+  speed: 'Скорость',
+  wpm: 'WPM',
+  noChapterContent: 'Содержимое главы недоступно',
+  
+  // Controls
+  play: 'Воспроизвести',
+  pause: 'Пауза',
+  nextWord: 'Следующее слово',
+  previousWord: 'Предыдущее слово',
+  nextSentence: 'Следующее предложение',
+  previousSentence: 'Предыдущее предложение',
+  restartSentence: 'Перезапустить предложение',
+  resetToBeginning: 'Сбросить в начало',
+  showChapterView: 'Показать текст главы (T)',
+  hideChapterView: 'Скрыть текст главы (T)',
+  openSettings: 'Открыть настройки',
+  
+  // Settings
+  settings: 'Настройки',
+  autoStop: 'Автоостановка',
+  autoStopDescription: 'Управление автоматической остановкой воспроизведения',
+  disabled: 'Нет',
+  sentenceEnd: 'Конец предложения',
+  paragraphEnd: 'Конец абзаца',
+  advancedControls: 'Продвинутый режим плеера',
+  advancedControlsDescription: 'Показать расширенные элементы управления воспроизведением (навигация по словам, предложениям, сброс и т.д.)',
+  theme: 'Тема',
+  light: 'Светлая',
+  dark: 'Тёмная',
+  system: 'Системная',
+  
+  // Book Upload
+  selectFile: 'Выбрать файл',
+  chooseFile: 'Выбрать файл',
+  supportedFileTypes: 'Поддерживаемые расширения',
+  pasteText: 'Вставить текст',
+  pasteTextPlaceholder: 'Вставьте текст книги здесь...',
+  processText: 'Обработать текст',
+  bookInformation: 'Информация о книге',
+  title: 'Название',
+  titlePlaceholder: 'Введите название книги',
+  author: 'Автор',
+  authorPlaceholder: 'Введите имя автора',
+  language: 'Язык',
+  english: 'Английский',
+  russian: 'Русский',
+  cancel: 'Отмена',
+  saveBook: 'Сохранить книгу',
+  bookSavedSuccessfully: 'Книга успешно сохранена',
+  uploadMode: 'Режим загрузки:',
+  fileUpload: 'Из файла',
+  textInput: 'Из формы',
+  previewFirstChapters: 'Предпросмотр (первые главы)',
+  noPreviewAvailable: 'Предпросмотр недоступен',
+  previewDescription: 'Этот предпросмотр показывает первые несколько абзацев для проверки импорта. Содержимое здесь нельзя редактировать.',
+  unsupportedFileType: 'Неподдерживаемый тип файла. Поддерживаемые типы: {types}',
+  failedToProcessFile: 'Не удалось обработать файл: {error}',
+  failedToProcessText: 'Не удалось обработать текст: {error}',
+  failedToSaveBook: 'Не удалось сохранить книгу: {error}',
+  pleaseEnterText: 'Пожалуйста, введите текст',
+  untitledBook: 'Книга без названия',
+  
+  // Language Selection
+  selectLanguage: 'Выбрать язык',
+  
+  // Common
+  required: 'Обязательно',
+} as const;

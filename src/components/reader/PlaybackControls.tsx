@@ -1,6 +1,7 @@
 import { HStack, IconButton } from '@chakra-ui/react';
 import { Tooltip } from '../ui/tooltip';
 import { FaPlay, FaPause, FaStepForward, FaStepBackward, FaFastBackward, FaFastForward } from 'react-icons/fa';
+import { useI18n } from '../../i18n/useI18n';
 
 export interface PlaybackControlsProps {
   isPlaying: boolean;
@@ -26,83 +27,86 @@ export function PlaybackControls({
   onPrevSentence,
   disabled = false,
 }: PlaybackControlsProps) {
+  const { t } = useI18n();
+  
   return (
     <HStack gap={2} justifyContent="center" flexWrap="nowrap" flexShrink={1}>
       <Tooltip 
-        content="Previous Sentence" 
+        content={t('previousSentence')} 
         positioning={{ placement: 'top' }}
         disabled={disabled}
       >
         <IconButton
-          aria-label="Previous Sentence"
+          aria-label={t('previousSentence')}
           onClick={onPrevSentence}
           disabled={disabled}
           size="md"
-          variant="outline"
+          variant="ghost"
         >
           <FaFastBackward />
         </IconButton>
       </Tooltip>
 
       <Tooltip 
-        content="Previous Word" 
+        content={t('previousWord')} 
         positioning={{ placement: 'top' }}
         disabled={disabled}
       >
         <IconButton
-          aria-label="Previous Word"
+          aria-label={t('previousWord')}
           onClick={onPrevWord}
           disabled={disabled}
           size="md"
-          variant="outline"
+          variant="ghost"
         >
           <FaStepBackward />
         </IconButton>
       </Tooltip>
 
       <Tooltip 
-        content={isPlaying ? 'Pause' : 'Play'} 
+        content={isPlaying ? t('pause') : t('play')} 
         positioning={{ placement: 'top' }}
         disabled={disabled}
       >
         <IconButton
-          aria-label={isPlaying ? 'Pause' : 'Play'}
+          aria-label={isPlaying ? t('pause') : t('play')}
           onClick={isPlaying ? onPause : onPlay}
           disabled={disabled}
           size="lg"
-          colorScheme="blue"
+          variant="subtle"
+          colorPalette="green"
         >
           {isPlaying ? <FaPause /> : <FaPlay />}
         </IconButton>
       </Tooltip>
 
       <Tooltip 
-        content="Next Word" 
+        content={t('nextWord')} 
         positioning={{ placement: 'top' }}
         disabled={disabled}
       >
         <IconButton
-          aria-label="Next Word"
+          aria-label={t('nextWord')}
           onClick={onNextWord}
           disabled={disabled}
           size="md"
-          variant="outline"
+          variant="ghost"
         >
           <FaStepForward />
         </IconButton>
       </Tooltip>
 
       <Tooltip 
-        content="Next Sentence" 
+        content={t('nextSentence')} 
         positioning={{ placement: 'top' }}
         disabled={disabled}
       >
         <IconButton
-          aria-label="Next Sentence"
+          aria-label={t('nextSentence')}
           onClick={onNextSentence}
           disabled={disabled}
           size="md"
-          variant="outline"
+          variant="ghost"
         >
           <FaFastForward />
         </IconButton>

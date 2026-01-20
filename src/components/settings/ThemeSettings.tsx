@@ -1,6 +1,7 @@
 import { Field, SegmentGroup, HStack } from '@chakra-ui/react';
 import { useColorMode, type ColorMode } from '../ui/color-mode';
 import { LuSun, LuMoon, LuMonitor } from 'react-icons/lu';
+import { useI18n } from '../../i18n/useI18n';
 
 /**
  * Theme settings component
@@ -8,11 +9,11 @@ import { LuSun, LuMoon, LuMonitor } from 'react-icons/lu';
  */
 export function ThemeSettings() {
   const { colorMode, setColorMode } = useColorMode();
+  const { t } = useI18n();
 
   return (
     <Field.Root>
-      <Field.Label>Theme</Field.Label>
-      <Field.HelperText>Choose your preferred color theme</Field.HelperText>
+      <Field.Label>{t('theme')}</Field.Label>
       <SegmentGroup.Root
         value={colorMode}
         onValueChange={(e) => setColorMode(e.value as ColorMode)}
@@ -25,7 +26,7 @@ export function ThemeSettings() {
               label: (
                 <HStack gap={1.5}>
                   <LuSun />
-                  <span>Light</span>
+                  <span>{t('light')}</span>
                 </HStack>
               ),
             },
@@ -34,7 +35,7 @@ export function ThemeSettings() {
               label: (
                 <HStack gap={1.5}>
                   <LuMoon />
-                  <span>Dark</span>
+                  <span>{t('dark')}</span>
                 </HStack>
               ),
             },
@@ -43,7 +44,7 @@ export function ThemeSettings() {
               label: (
                 <HStack gap={1.5}>
                   <LuMonitor />
-                  <span>System</span>
+                  <span>{t('system')}</span>
                 </HStack>
               ),
             },

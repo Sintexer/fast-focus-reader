@@ -3,6 +3,7 @@ import { Button, Text, Drawer, TreeView, createTreeCollection, Icon, CloseButton
 import type { Book } from '../../utils/db';
 import { BsArrowReturnLeft } from 'react-icons/bs';
 import { TableOfContentsTreeNode, type TreeNode } from './TableOfContentsTreeNode';
+import { useI18n } from '../../i18n/useI18n';
 
 export interface TableOfContentsProps {
   book: Book | null;
@@ -24,6 +25,8 @@ export function TableOfContents({
   onToggle,
   onBackToLibrary,
 }: TableOfContentsProps) {
+  const { t } = useI18n();
+  
   // Check if book has a single mock volume (should be ignored in display)
   const hasRealVolumes = useMemo(() => {
     if (!book) return false;
@@ -175,7 +178,7 @@ export function TableOfContents({
                 colorPalette="red"
               >
                 <Icon><BsArrowReturnLeft /></Icon>
-                Back to library
+                {t('backToLibrary')}
               </Button>
             </Drawer.Footer>
           )}

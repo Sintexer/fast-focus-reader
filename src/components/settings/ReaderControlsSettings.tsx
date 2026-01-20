@@ -1,5 +1,6 @@
 import { Field } from '@chakra-ui/react';
 import { Switch } from '@chakra-ui/react';
+import { useI18n } from '../../i18n/useI18n';
 
 export interface ReaderControlsSettingsProps {
   showControls: boolean;
@@ -13,11 +14,13 @@ export function ReaderControlsSettings({
   showControls,
   onShowControlsChange,
 }: ReaderControlsSettingsProps) {
+  const { t } = useI18n();
+  
   return (
     <Field.Root>
-      <Field.Label>Advanced Controls</Field.Label>
+      <Field.Label>{t('advancedControls')}</Field.Label>
       <Field.HelperText>
-        Show advanced playback controls (word navigation, reset, etc.)
+        {t('advancedControlsDescription')}
       </Field.HelperText>
       <Switch.Root
         checked={showControls}

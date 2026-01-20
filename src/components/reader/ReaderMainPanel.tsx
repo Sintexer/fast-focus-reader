@@ -7,6 +7,7 @@ import { ChapterTextContainer } from './ChapterTextContainer';
 import { CurrentWordDisplay } from './CurrentWordDisplay';
 import { TitleDisplay } from './TitleDisplay';
 import type { PlaybackControls } from './types';
+import { useI18n } from '../../i18n/useI18n';
 
 export interface ReaderMainPanelProps {
   book: Book | null;
@@ -42,6 +43,7 @@ export function ReaderMainPanel({
   shouldAutoplay = false,
   isLoadingProgress = false,
 }: ReaderMainPanelProps) {
+  const { t } = useI18n();
   const chapterText = useMemo(
     () => getChapterText(book, volumeId, chapterId),
     [book, volumeId, chapterId]
@@ -192,7 +194,7 @@ export function ReaderMainPanel({
         justifyContent="center"
         overflow="hidden"
       >
-        <Text color="gray.500">Loading...</Text>
+        <Text color="gray.500">{t('loading')}</Text>
       </Box>
     );
   }
@@ -207,7 +209,7 @@ export function ReaderMainPanel({
         justifyContent="center"
         overflow="hidden"
       >
-        <Text color="gray.500">No chapter content available</Text>
+        <Text color="gray.500">{t('noChapterContent')}</Text>
       </Box>
     );
   }

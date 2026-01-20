@@ -1,8 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Container, VStack, HStack, Text, SimpleGrid, Button } from '@chakra-ui/react';
+import { Box, Container, VStack, HStack, Text, SimpleGrid, Flex, Button } from '@chakra-ui/react';
+import { BsPlus } from 'react-icons/bs';
+import { Tooltip } from '../ui/tooltip';
 import { getAllBooks, saveBook, type Book } from '../../utils/db';
 import { BookUpload } from './BookUpload';
+import { LibraryFooter } from './LibraryFooter';
+import { LanguageSelectionDrawer } from './LanguageSelectionDrawer';
+import { SettingsDrawer } from '../settings/SettingsDrawer';
+import { useI18n } from '../../i18n/useI18n';
+import type { AutoStopMode } from '../settings/types';
 
 
 // Sample texts for testing - converted to paragraphs structure
@@ -26,9 +33,14 @@ const SAMPLE_TEXT_3_PARAGRAPHS = [
 
 export function Library() {
   const navigate = useNavigate();
+  const { t } = useI18n();
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showLanguageSelection, setShowLanguageSelection] = useState(false);
+  const [autoStopMode, setAutoStopMode] = useState<AutoStopMode>('sentence');
+  const [showControls, setShowControls] = useState(false);
 
   const loadBooks = async () => {
     const loadedBooks = await getAllBooks();
@@ -195,33 +207,76 @@ export function Library() {
 
   if (loading) {
     return (
-      <Container maxW="container.xl" py={8}>
-        <Text>Loading books...</Text>
+      <Container
+        maxW={{base: "100%", lg: "1024px", xl: "1280px", "2xl": "1536px"}}
+        h="100vh"
+        p={0}
+        centerContent={false}
+        overflowX="hidden"
+        display="flex"
+        flexDirection="column"
+      >
+        <Flex flex="1" alignItems="center" justifyContent="center" px={2}>
+          <Text>{t('loadingBooks')}</Text>
+        </Flex>
+        <LibraryFooter
+          onOpenSettings={() => setShowSettings(true)}
+          onOpenLanguageSelection={() => setShowLanguageSelection(true)}
+        />
       </Container>
     );
   }
 
   if (books.length === 0) {
     return (
-      <Container maxW="container.xl" py={8}>
-        <Text>No books available. Please add a book to get started.</Text>
+      <Container
+        maxW={{base: "100%", lg: "1024px", xl: "1280px", "2xl": "1536px"}}
+        h="100vh"
+        p={0}
+        centerContent={false}
+        overflowX="hidden"
+        display="flex"
+        flexDirection="column"
+      >
+        <Flex flex="1" alignItems="center" justifyContent="center" px={2}>
+          <Text>{t('noBooksAvailable')}</Text>
+        </Flex>
+        <LibraryFooter
+          onOpenSettings={() => setShowSettings(true)}
+          onOpenLanguageSelection={() => setShowLanguageSelection(true)}
+        />
       </Container>
     );
   }
 
   return (
-    <Container maxW="container.xl" py={8}>
-      <VStack align="stretch" gap={6}>
+    <Container
+      maxW={{base: "100%", lg: "1024px", xl: "1280px", "2xl": "1536px"}}
+      h="100vh"
+      p={0}
+      centerContent={false}
+      overflowX="hidden"
+      display="flex"
+      flexDirection="column"
+    >
+      <VStack align="stretch" gap={6} flex="1" overflow="auto" px={2} pt={2}>
         <HStack justify="space-between" align="center">
           <Text fontSize="2xl" fontWeight="bold">
-            Library
+            {t('library')}
           </Text>
-          <Button
-            colorPalette="blue"
-            onClick={() => setUploadModalOpen(true)}
-          >
-            Upload Book
-          </Button>
+          <Tooltip content={t('uploadBook')}>
+            <Button
+              aria-label={t('uploadBook')}
+              onClick={() => setUploadModalOpen(true)}
+              size="sm"
+              variant="subtle"
+              rounded="full"
+              colorPalette="green"
+            >
+              <BsPlus />
+              {t('uploadBook')}
+            </Button>
+          </Tooltip>
         </HStack>
         
         <SimpleGrid columns={{ base: 1, sm: 2, md: 3, lg: 4 }} gap={4}>
@@ -254,7 +309,7 @@ export function Library() {
                 )}
                 <HStack gap={2} fontSize="xs" color="gray.500" _dark={{ color: 'gray.500' }}>
                   <Text>
-                    {book.structure.volumes.reduce((sum, vol) => sum + vol.chapters.length, 0)} chapters
+                    {book.structure.volumes.reduce((sum, vol) => sum + vol.chapters.length, 0)} {t('chapters')}
                   </Text>
                 </HStack>
               </VStack>
@@ -263,12 +318,31 @@ export function Library() {
         </SimpleGrid>
       </VStack>
       
+      <LibraryFooter
+        onOpenSettings={() => setShowSettings(true)}
+        onOpenLanguageSelection={() => setShowLanguageSelection(true)}
+      />
+      
       <BookUpload
         isOpen={uploadModalOpen}
         onClose={() => setUploadModalOpen(false)}
         onBookSaved={() => {
           loadBooks();
         }}
+      />
+      
+      <SettingsDrawer
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+        autoStopMode={autoStopMode}
+        onAutoStopModeChange={setAutoStopMode}
+        showControls={showControls}
+        onShowControlsChange={setShowControls}
+      />
+      
+      <LanguageSelectionDrawer
+        isOpen={showLanguageSelection}
+        onClose={() => setShowLanguageSelection(false)}
       />
     </Container>
   );

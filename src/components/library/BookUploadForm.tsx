@@ -1,4 +1,5 @@
 import { VStack, Field, Input, NativeSelect, Text } from '@chakra-ui/react';
+import { useI18n } from '../../i18n/useI18n';
 
 export interface BookUploadFormProps {
   title: string;
@@ -17,44 +18,46 @@ export function BookUploadForm({
   onAuthorChange,
   onLanguageChange,
 }: BookUploadFormProps) {
+  const { t } = useI18n();
+  
   return (
     <>
       <Text fontSize="xl" fontWeight="semibold">
-        Book Information
+        {t('bookInformation')}
       </Text>
 
       <VStack align="stretch" gap={4}>
         <Field.Root required>
           <Field.Label>
-            Title <Field.RequiredIndicator />
+            {t('title')} <Field.RequiredIndicator />
           </Field.Label>
           <Input
             value={title}
             onChange={(e) => onTitleChange(e.currentTarget.value)}
-            placeholder="Enter book title"
+            placeholder={t('titlePlaceholder')}
           />
         </Field.Root>
 
         <Field.Root>
-          <Field.Label>Author</Field.Label>
+          <Field.Label>{t('author')}</Field.Label>
           <Input
             value={author}
             onChange={(e) => onAuthorChange(e.currentTarget.value)}
-            placeholder="Enter author name"
+            placeholder={t('authorPlaceholder')}
           />
         </Field.Root>
 
         <Field.Root required>
           <Field.Label>
-            Language <Field.RequiredIndicator />
+            {t('language')} <Field.RequiredIndicator />
           </Field.Label>
           <NativeSelect.Root>
             <NativeSelect.Field
               value={language}
               onChange={(e) => onLanguageChange(e.currentTarget.value as 'en' | 'ru')}
             >
-              <option value="en">English</option>
-              <option value="ru">Russian</option>
+              <option value="en">{t('english')}</option>
+              <option value="ru">{t('russian')}</option>
             </NativeSelect.Field>
             <NativeSelect.Indicator />
           </NativeSelect.Root>

@@ -1,5 +1,6 @@
 import { Box, VStack, Text, Code } from '@chakra-ui/react';
 import type { Book } from '../../utils/db';
+import { useI18n } from '../../i18n/useI18n';
 
 const MAX_PREVIEW_LENGTH = 500; // Characters to show in preview
 
@@ -8,6 +9,8 @@ export interface BookPreviewProps {
 }
 
 export function BookPreview({ book }: BookPreviewProps) {
+  const { t } = useI18n();
+  
   const getPreviewSamples = (): Array<{ chapterTitle?: string; text: string }> => {
     const samples: Array<{ chapterTitle?: string; text: string }> = [];
     let totalLength = 0;
@@ -56,7 +59,7 @@ export function BookPreview({ book }: BookPreviewProps) {
   return (
     <VStack align="stretch" gap={4}>
       <Text fontSize="lg" fontWeight="semibold">
-        Preview (First Chapters)
+        {t('previewFirstChapters')}
       </Text>
 
       <Box
@@ -99,14 +102,14 @@ export function BookPreview({ book }: BookPreviewProps) {
           ))}
           {samples.length === 0 && (
             <Text fontSize="sm" color="gray.500">
-              No preview available
+              {t('noPreviewAvailable')}
             </Text>
           )}
         </VStack>
       </Box>
 
       <Text fontSize="xs" color="gray.500" fontStyle="italic">
-        This preview shows the first few paragraphs to help verify the import. The content cannot be edited here.
+        {t('previewDescription')}
       </Text>
     </VStack>
   );
