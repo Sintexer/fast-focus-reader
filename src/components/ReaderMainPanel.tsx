@@ -1,10 +1,11 @@
 import { Box, Text } from '@chakra-ui/react';
 import { useTextPlayback } from '../hooks/useTextPlayback';
-import { useMemo, useEffect } from 'react';
+import { useMemo, useEffect, useRef } from 'react';
 import type { Book } from '../utils/db';
 import { getChapterText } from '../utils/bookTextUtils';
 import { ChapterTextContainer } from './reader/ChapterTextContainer';
 import { CurrentWordDisplay } from './reader/CurrentWordDisplay';
+import { TitleDisplay } from './reader/TitleDisplay';
 import type { PlaybackControls } from './reader/types';
 
 export interface ReaderMainPanelProps {
@@ -17,6 +18,10 @@ export interface ReaderMainPanelProps {
   onPlaybackReady?: (controls: PlaybackControls) => void;
   showChapterView?: boolean;
   onToggleChapterView?: () => void;
+  showingTitle?: 'volume' | 'chapter' | null;
+  currentTitle?: string | null;
+  shouldAutoplay?: boolean;
+  isLoadingProgress?: boolean;
 }
 
 /**
@@ -31,7 +36,11 @@ export function ReaderMainPanel({
   autoStopOnParagraphEnd = false,
   onPlaybackReady,
   showChapterView = false,
-  onToggleChapterView
+  onToggleChapterView,
+  showingTitle = null,
+  currentTitle = null,
+  shouldAutoplay = false,
+  isLoadingProgress = false,
 }: ReaderMainPanelProps) {
   const chapterText = useMemo(
     () => getChapterText(book, volumeId, chapterId),
@@ -60,7 +69,7 @@ export function ReaderMainPanel({
   }, [onToggleChapterView]);
 
   const playback = useTextPlayback({
-    text: chapterText,
+    text: chapterText || '',
     locale: book?.language || 'ru',
     initialWPM,
     autoStopOnSentenceEnd,
@@ -111,7 +120,85 @@ export function ReaderMainPanel({
     }
   }, [onPlaybackReady, playbackControls]);
 
-  if (!chapterText) {
+  // Pause and reset playback when chapter changes (selected from TOC)
+  const prevChapterRef = useRef({ volumeId, chapterId });
+  useEffect(() => {
+    // If chapter changed, pause and reset playback
+    if (prevChapterRef.current.volumeId !== volumeId || prevChapterRef.current.chapterId !== chapterId) {
+      if (playbackControls) {
+        playbackControls.pause();
+        playbackControls.reset();
+      }
+      prevChapterRef.current = { volumeId, chapterId };
+    }
+  }, [volumeId, chapterId, playbackControls]);
+
+  // Reset playback when showingTitle is set (chapter selected from TOC)
+  // This ensures chapter view resets even when selecting the same chapter
+  const prevShowingTitleForResetRef = useRef(showingTitle);
+  useEffect(() => {
+    // If we just started showing a title (chapter was selected), reset playback immediately
+    // This ensures the chapter view shows the correct position even for the same chapter
+    if (!prevShowingTitleForResetRef.current && showingTitle && playbackControls) {
+      playbackControls.pause();
+      playbackControls.reset();
+    }
+    prevShowingTitleForResetRef.current = showingTitle;
+  }, [showingTitle, playbackControls]);
+
+  // Track shouldAutoplay in a ref so we can check it without causing effect re-runs
+  const shouldAutoplayRef = useRef(shouldAutoplay);
+  useEffect(() => {
+    shouldAutoplayRef.current = shouldAutoplay;
+  }, [shouldAutoplay]);
+
+  // Store playback controls in a ref to avoid effect re-runs when the object changes
+  const playbackControlsRef = useRef(playbackControls);
+  useEffect(() => {
+    playbackControlsRef.current = playbackControls;
+  }, [playbackControls]);
+
+  // Reset and start playing when transitioning from title to text
+  const prevShowingTitleForAutoplayRef = useRef(showingTitle);
+  useEffect(() => {
+    // If we were showing a title and now we're not, reset playback to start
+    const wasShowingTitle = prevShowingTitleForAutoplayRef.current;
+    const isShowingTitle = showingTitle;
+    
+    if (wasShowingTitle && !isShowingTitle && playbackControlsRef.current) {
+      const controls = playbackControlsRef.current;
+      controls.reset();
+      // Start playing if shouldAutoplay is true (check the ref to get the latest value)
+      if (shouldAutoplayRef.current) {
+        // Use a small delay to ensure reset completes before play
+        const timeoutId = setTimeout(() => {
+          controls.play();
+        }, 50);
+        return () => clearTimeout(timeoutId);
+      }
+    }
+    
+    prevShowingTitleForAutoplayRef.current = showingTitle;
+  }, [showingTitle]); // Only depend on showingTitle to avoid multiple runs
+
+  // Don't render content while loading progress to prevent brief wrong renders
+  if (isLoadingProgress) {
+    return (
+      <Box 
+        flex="1" 
+        display="flex" 
+        flexDirection="column"
+        alignItems="center" 
+        justifyContent="center"
+        overflow="hidden"
+        px={4}
+      >
+        <Text color="gray.500">Loading...</Text>
+      </Box>
+    );
+  }
+
+  if (!chapterText && !showingTitle) {
     return (
       <Box 
         flex="1" 
@@ -138,8 +225,8 @@ export function ReaderMainPanel({
       px={4}
       py={6}
     >
-      {/* Chapter text view - conditionally rendered at top */}
-      {showChapterView && (
+      {/* Chapter text view - conditionally rendered at top - always show when enabled, even when showing title */}
+      {showChapterView && chapterText && (
         <Box
           w="100%"
           opacity={1}
@@ -147,6 +234,7 @@ export function ReaderMainPanel({
           transition="opacity 0.2s ease-out, transform 0.2s ease-out"
           mb={6}
           flexShrink={0}
+          key={`chapter-view-${currentWord?.charIndex || 0}`}
         >
           <ChapterTextContainer
             chapterText={chapterText}
@@ -156,7 +244,7 @@ export function ReaderMainPanel({
         </Box>
       )}
 
-      {/* Word display - takes remaining space, centers when no chapter view, aligns to top when chapter view is shown */}
+      {/* Word display or Title display - takes remaining space, centers when no chapter view, aligns to top when chapter view is shown */}
       <Box
         flex="1"
         display="flex"
@@ -165,9 +253,11 @@ export function ReaderMainPanel({
         w="100%"
         minH={0}
       >
-        {currentWord && (
+        {showingTitle && currentTitle ? (
+          <TitleDisplay title={currentTitle} type={showingTitle} />
+        ) : currentWord ? (
           <CurrentWordDisplay word={currentWord.text} />
-        )}
+        ) : null}
       </Box>
     </Box>
   );

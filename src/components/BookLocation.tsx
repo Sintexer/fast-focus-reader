@@ -1,4 +1,4 @@
-import { HStack, Text, Icon } from '@chakra-ui/react';
+import { HStack, Text, Icon, Box } from '@chakra-ui/react';
 import type { Book } from '../utils/db';
 import { BsCardList } from 'react-icons/bs';
 
@@ -18,10 +18,6 @@ export function BookLocation({
   const volume = book.structure.volumes.find(v => v.id === volumeId);
   const chapter = volume?.chapters.find(c => c.id === chapterId);
 
-  // Check if book has real volumes (not just a single mock volume)
-  const hasRealVolumes = book.structure.volumes.length > 1 || 
-    (book.structure.volumes.length === 1 && book.structure.volumes[0].title !== '');
-
   return (
     <HStack
       gap={2}
@@ -31,17 +27,22 @@ export function BookLocation({
       opacity={0.6}
       _hover={{ opacity: 0.9 }}
       transition="opacity 0.2s"
+      maxW="100%"
     >
-      {hasRealVolumes && volume && (
-        <>
-          <Text fontWeight="medium">{volume.title}</Text>
-          <Text>•</Text>
-        </>
-      )}
       {chapter && (
-        <Text fontWeight="medium">{chapter.title}</Text>
+        <Box
+          flex="1"
+          minW={0}
+          overflow="hidden"
+          textOverflow="ellipsis"
+          whiteSpace="nowrap"
+        >
+          <Text fontWeight="medium" overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap">
+            {chapter.title}
+          </Text>
+        </Box>
       )}
-      <Icon as={BsCardList} fontSize="sm" />
+      <Icon as={BsCardList} fontSize="sm" flexShrink={0} />
     </HStack>
   );
 }

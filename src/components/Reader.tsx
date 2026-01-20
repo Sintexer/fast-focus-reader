@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useRef, useState} from 'react';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {useLocation, useNavigate, useParams} from 'react-router-dom';
 import {useReader} from '../hooks/useReader';
 import {type Book, getBook, getSettingsOrDefault, type Settings} from '../utils/db';
@@ -91,9 +91,56 @@ export function Reader() {
         setShowSettings(true);
     }, []);
 
+    // Handle advance to next sentence - route to reader when at chapter end
+    const handleAdvanceToNextSentence = useCallback(() => {
+        // Always use reader navigation when showing title
+        if (reader.state.showingTitle) {
+            reader.nextSentence();
+            return;
+        }
+        
+        if (!playbackControls) {
+            return;
+        }
+        
+        // Check if at chapter end - if at last sentence, we're at chapter end
+        // The playback controller only knows about the current chapter text
+        const isAtLastSentence = playbackControls.currentSentenceIndex >= playbackControls.maxSentenceIndex;
+        const isAtChapterEnd = reader.isAtChapterEnd() || isAtLastSentence;
+        
+        if (isAtChapterEnd) {
+            // At chapter end - use nextSentenceAtChapterEnd which bypasses reader state check
+            // and directly moves to next chapter (reader state may be out of sync with playback)
+            reader.nextSentenceAtChapterEnd();
+            return;
+        }
+        
+        // Not at chapter end - use playback controller
+        playbackControls.advanceToNextSentence();
+    }, [reader, playbackControls]);
+
     const handleCloseSettings = useCallback(() => {
         setShowSettings(false);
     }, []);
+
+    // Memoize isStoppedAtSentenceEnd calculation to avoid render loops
+    const isStoppedAtSentenceEnd = useMemo(() => {
+        if (reader.state.showingTitle) {
+            return true;
+        }
+        if (!playbackControls) {
+            return false;
+        }
+        const isAtChapterEnd = reader.isAtChapterEnd() || 
+            (playbackControls.currentSentenceIndex >= playbackControls.maxSentenceIndex);
+        return isAtChapterEnd ? true : playbackControls.isStoppedAtSentenceEnd;
+    }, [
+        reader.state.showingTitle, 
+        reader.isAtChapterEnd, 
+        playbackControls?.currentSentenceIndex, 
+        playbackControls?.maxSentenceIndex, 
+        playbackControls?.isStoppedAtSentenceEnd
+    ]);
 
     // Show loading state if data isn't ready
     if (loading || !settings || !book) {
@@ -168,6 +215,10 @@ export function Reader() {
                             onPlaybackReady={handlePlaybackReady}
                             showChapterView={showChapterView}
                             onToggleChapterView={handleToggleChapterView}
+                            showingTitle={reader.state.showingTitle}
+                            currentTitle={reader.getCurrentTitle()}
+                            shouldAutoplay={reader.state.isPlaying && !reader.state.showingTitle}
+                            isLoadingProgress={reader.state.isLoadingProgress}
                         />
                     </Box>
 
@@ -176,17 +227,17 @@ export function Reader() {
                         <>
                             <ReaderControlsPanel
                                 ref={controlsPanelRef}
-                                isPlaying={playbackControls.isPlaying}
-                                onPlay={playbackControls.play}
+                                isPlaying={reader.state.showingTitle ? false : playbackControls.isPlaying}
+                                onPlay={reader.state.showingTitle ? () => {} : playbackControls.play}
                                 onPause={playbackControls.pause}
-                                onNextWord={playbackControls.nextWord}
-                                onPrevWord={playbackControls.prevWord}
-                                onNextSentence={playbackControls.nextSentence}
-                                onPrevSentence={playbackControls.prevSentence}
+                                onNextWord={reader.state.showingTitle ? () => {} : playbackControls.nextWord}
+                                onPrevWord={reader.state.showingTitle ? () => {} : playbackControls.prevWord}
+                                onNextSentence={reader.state.showingTitle ? reader.nextSentence : playbackControls.nextSentence}
+                                onPrevSentence={reader.state.showingTitle ? reader.prevSentence : playbackControls.prevSentence}
                                 onReset={playbackControls.reset}
                                 onRestartSentence={playbackControls.restartSentence}
-                                onAdvanceToNextSentence={playbackControls.advanceToNextSentence}
-                                isStoppedAtSentenceEnd={playbackControls.isStoppedAtSentenceEnd}
+                                onAdvanceToNextSentence={handleAdvanceToNextSentence}
+                                isStoppedAtSentenceEnd={isStoppedAtSentenceEnd}
                                 disabled={false}
                                 onViewChange={handleControlsViewChange}
                             />

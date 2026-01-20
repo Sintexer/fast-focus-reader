@@ -15,6 +15,7 @@ export interface ReaderState {
   showingTitle: 'volume' | 'chapter' | null;
   previousVolumeId: string;
   previousChapterId: string;
+  isLoadingProgress: boolean; // Track if we're loading progress to prevent brief wrong renders
 }
 
 interface UseReaderOptions {
@@ -38,6 +39,7 @@ export function useReader({ book, bookId, settings }: UseReaderOptions) {
     showingTitle: null,
     previousVolumeId: '',
     previousChapterId: '',
+    isLoadingProgress: true, // Start as loading
   });
   
   const [sessionStartTime] = useState(Date.now());
@@ -69,8 +71,12 @@ export function useReader({ book, bookId, settings }: UseReaderOptions) {
             wordIndex: 0,
             paragraphIndex: 0,
             showingTitle: shouldShowVolumeTitle ? 'volume' : (shouldShowChapterTitle ? 'chapter' : null),
+            isLoadingProgress: false, // Done initializing
           }));
         }
+      } else {
+        // Book loaded but we already have state - mark as not loading
+        setState((prev) => ({ ...prev, isLoadingProgress: false }));
       }
     }
   }, [book]);
@@ -96,9 +102,16 @@ export function useReader({ book, bookId, settings }: UseReaderOptions) {
             wordIndex: progress.wordIndex,
             paragraphIndex: paraInfo?.paragraphIndex ?? 0,
             showingTitle: null, // Don't show title when loading from progress
+            isLoadingProgress: false, // Done loading progress
           }));
+        } else {
+          // No progress found, mark as not loading
+          setState((prev) => ({ ...prev, isLoadingProgress: false }));
         }
       });
+    } else if (book && !bookId) {
+      // No bookId, mark as not loading
+      setState((prev) => ({ ...prev, isLoadingProgress: false }));
     }
   }, [bookId, book]);
   
@@ -273,8 +286,8 @@ export function useReader({ book, bookId, settings }: UseReaderOptions) {
     return null;
   }, [book]);
 
-  // Check if we're at the end of the last sentence
-  const isAtEnd = useCallback((): boolean => {
+  // Check if we're at the end of the current chapter (not necessarily the book)
+  const isAtChapterEnd = useCallback((): boolean => {
     if (!iteratorRef.current) return false;
     
     const sentenceCount = iteratorRef.current.getSentenceCount(state.volumeId, state.chapterId);
@@ -288,12 +301,17 @@ export function useReader({ book, bookId, settings }: UseReaderOptions) {
     const isLastSentence = state.sentenceIndex === sentenceCount - 1;
     const isLastWord = state.wordIndex === sentenceWordCount - 1;
     
-    if (!isLastSentence || !isLastWord) return false;
+    return isLastSentence && isLastWord;
+  }, [state.volumeId, state.chapterId, state.sentenceIndex, state.wordIndex]);
+
+  // Check if we're at the end of the last sentence
+  const isAtEnd = useCallback((): boolean => {
+    if (!isAtChapterEnd()) return false;
     
     // Check if there are more chapters after this one
     const nextChapter = findNextChapter(state.volumeId, state.chapterId);
     return nextChapter === null;
-  }, [state.volumeId, state.chapterId, state.sentenceIndex, state.wordIndex, findNextChapter]);
+  }, [state.volumeId, state.chapterId, isAtChapterEnd, findNextChapter]);
 
   // Helper to find previous chapter
   const findPrevChapter = useCallback((currentVolumeId: string, currentChapterId: string): { volumeId: string; chapterId: string } | null => {
@@ -378,7 +396,36 @@ export function useReader({ book, bookId, settings }: UseReaderOptions) {
         };
       }
 
-      // Reached end of chapter, stop playing
+      // Reached end of chapter, move to next chapter and show title
+      const nextChapter = findNextChapter(prev.volumeId, prev.chapterId);
+      if (nextChapter && book) {
+        const newVolume = book.structure.volumes.find(v => v.id === nextChapter.volumeId);
+        const hasRealVolumes = book.structure.volumes.length > 1 || 
+          (book.structure.volumes.length === 1 && book.structure.volumes[0].title !== '');
+        
+        // Check if we're entering a new volume
+        const isNewVolume = prev.volumeId !== nextChapter.volumeId;
+        const shouldShowVolumeTitle = isNewVolume && hasRealVolumes && newVolume && newVolume.title !== '';
+        
+        // Always show chapter title when entering new chapter
+        const newChapter = newVolume?.chapters.find(c => c.id === nextChapter.chapterId);
+        const shouldShowChapterTitle = newChapter && newChapter.title !== '';
+        
+        return {
+          ...prev,
+          volumeId: nextChapter.volumeId,
+          chapterId: nextChapter.chapterId,
+          sentenceIndex: 0,
+          wordIndex: 0,
+          paragraphIndex: 0,
+          isPlaying: false, // Pause when showing title
+          showingTitle: shouldShowVolumeTitle ? 'volume' : (shouldShowChapterTitle ? 'chapter' : null),
+          previousVolumeId: prev.volumeId,
+          previousChapterId: prev.chapterId,
+        };
+      }
+
+      // Reached end of book, stop playing
       return {
         ...prev,
         isPlaying: false,
@@ -386,7 +433,7 @@ export function useReader({ book, bookId, settings }: UseReaderOptions) {
     });
     
     setWordsRead((prev) => prev + 1);
-  }, []);
+  }, [findNextChapter, book]);
   
   // Navigate to previous word
   const prevWord = useCallback(() => {
@@ -450,25 +497,90 @@ export function useReader({ book, bookId, settings }: UseReaderOptions) {
     });
   }, [findPrevChapter]);
   
+  // Navigate to next sentence at chapter end (when playback controller is at last sentence)
+  // This bypasses reader state checking and directly moves to next chapter
+  const nextSentenceAtChapterEnd = useCallback(() => {
+    if (!iteratorRef.current || !book) return;
+    
+    setState((prev) => {
+      // Move to next chapter directly (we know we're at chapter end from playback controller)
+      const nextChapter = findNextChapter(prev.volumeId, prev.chapterId);
+      if (nextChapter) {
+        const newVolume = book.structure.volumes.find(v => v.id === nextChapter.volumeId);
+        const hasRealVolumes = book.structure.volumes.length > 1 || 
+          (book.structure.volumes.length === 1 && book.structure.volumes[0].title !== '');
+        
+        // Check if we're entering a new volume
+        const isNewVolume = prev.volumeId !== nextChapter.volumeId;
+        const shouldShowVolumeTitle = isNewVolume && hasRealVolumes && newVolume && newVolume.title !== '';
+        
+        // Always show chapter title when entering new chapter
+        const newChapter = newVolume?.chapters.find(c => c.id === nextChapter.chapterId);
+        const shouldShowChapterTitle = newChapter && newChapter.title !== '';
+        
+        return {
+          ...prev,
+          volumeId: nextChapter.volumeId,
+          chapterId: nextChapter.chapterId,
+          sentenceIndex: 0,
+          wordIndex: 0,
+          paragraphIndex: 0,
+          isPlaying: false,
+          showingTitle: shouldShowVolumeTitle ? 'volume' : (shouldShowChapterTitle ? 'chapter' : null),
+          previousVolumeId: prev.volumeId,
+          previousChapterId: prev.chapterId,
+        };
+      }
+      
+      return prev;
+    });
+  }, [findNextChapter, book]);
+
   // Navigate to next sentence
   const nextSentence = useCallback(() => {
     if (!iteratorRef.current || !book) return;
     
     setState((prev) => {
-      // If currently showing a title, move to first sentence and preserve play state
-      if (prev.showingTitle) {
+      // If currently showing a title, handle the sequence
+      if (prev.showingTitle === 'volume') {
+        // Just showed volume title, now check if we need to show chapter title
+        const newVolume = book.structure.volumes.find(v => v.id === prev.volumeId);
+        const newChapter = newVolume?.chapters.find(c => c.id === prev.chapterId);
+        const shouldShowChapterTitle = newChapter && newChapter.title !== '';
+        
+        if (shouldShowChapterTitle) {
+          // Show chapter title next
+          return {
+            ...prev,
+            showingTitle: 'chapter',
+          };
+        } else {
+          // No chapter title, start text playback with autoplay
+          return {
+            ...prev,
+            showingTitle: null,
+            sentenceIndex: 0,
+            wordIndex: 0,
+            paragraphIndex: 0,
+            isPlaying: true, // Autoplay when starting text after volume title (no chapter title)
+          };
+        }
+      } else if (prev.showingTitle === 'chapter') {
+        // Just showed chapter title, now start text playback with autoplay
         return {
           ...prev,
           showingTitle: null,
           sentenceIndex: 0,
           wordIndex: 0,
           paragraphIndex: 0,
-          // Preserve isPlaying state - if it was playing, keep playing
+          isPlaying: true, // Autoplay when starting text after chapter title
         };
       }
       
       const sentenceCount = iteratorRef.current!.getSentenceCount(prev.volumeId, prev.chapterId);
       
+      // Check if we're actually at the last sentence (accounting for potential state desync)
+      // If sentenceIndex is less than sentenceCount - 1, we can move to next sentence
       if (prev.sentenceIndex < sentenceCount - 1) {
         // Move to next sentence in current chapter
         // Preserve isPlaying state - if it was true, keep it true (timer will continue)
@@ -487,7 +599,7 @@ export function useReader({ book, bookId, settings }: UseReaderOptions) {
         };
       }
 
-      // Move to next chapter
+      // At last sentence - move to next chapter
       const nextChapter = findNextChapter(prev.volumeId, prev.chapterId);
       if (nextChapter) {
         const newVolume = book.structure.volumes.find(v => v.id === nextChapter.volumeId);
@@ -691,7 +803,12 @@ export function useReader({ book, bookId, settings }: UseReaderOptions) {
       
       // Check if we're entering a new volume
       const isNewVolume = prev.volumeId !== volumeId;
-      const shouldShowVolumeTitle = isNewVolume && hasRealVolumes && newVolume && newVolume.title !== '';
+      
+      // Check if this is the first chapter of the volume
+      const isFirstChapter = newVolume && newVolume.chapters.length > 0 && newVolume.chapters[0].id === chapterId;
+      
+      // Show volume title if entering a new volume OR if selecting first chapter of current volume
+      const shouldShowVolumeTitle = (isNewVolume || isFirstChapter) && hasRealVolumes && newVolume && newVolume.title !== '';
       
       // Always show chapter title when navigating to a chapter
       const newChapter = newVolume?.chapters.find(c => c.id === chapterId);
@@ -808,6 +925,8 @@ export function useReader({ book, bookId, settings }: UseReaderOptions) {
     getCurrentChapterSentenceCount,
     getWordIndexInSentence,
     isAtEnd,
+    isAtChapterEnd,
+    nextSentenceAtChapterEnd,
     nextWord,
     prevWord,
     nextSentence,
