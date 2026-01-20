@@ -1,5 +1,5 @@
 import { HStack, Text, Icon, Box } from '@chakra-ui/react';
-import type { Book } from '../utils/db';
+import type { Book } from '../../utils/db';
 import { BsCardList } from 'react-icons/bs';
 
 export interface ReaderHeaderProps {

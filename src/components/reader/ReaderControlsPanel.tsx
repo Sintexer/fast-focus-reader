@@ -1,7 +1,7 @@
 import { useState, useImperativeHandle, forwardRef } from 'react';
 import { Box, VStack, HStack, IconButton, Flex } from '@chakra-ui/react';
 import { FaPlay, FaPause, FaRedo, FaArrowRight } from 'react-icons/fa';
-import { Tooltip } from './ui/tooltip';
+import { Tooltip } from '../ui/tooltip';
 import { PlaybackControls } from './PlaybackControls';
 
 export interface ReaderControlsPanelProps {

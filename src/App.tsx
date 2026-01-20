@@ -1,6 +1,6 @@
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Reader } from './components/Reader';
-import { Library } from './components/Library';
+import { Library } from './components/library/Library';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
 function App() {

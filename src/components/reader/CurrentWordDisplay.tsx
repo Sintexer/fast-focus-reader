@@ -1,5 +1,5 @@
 import { Box } from '@chakra-ui/react';
-import { AnchoredWordDisplay } from '../AnchoredWordDisplay';
+import { AnchoredWordDisplay } from './AnchoredWordDisplay';
 import type { CurrentWordDisplayProps } from './types';
 
 /**

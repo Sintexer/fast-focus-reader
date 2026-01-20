@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
 import { Button, Text, Drawer, TreeView, createTreeCollection, Icon, CloseButton, VStack } from '@chakra-ui/react';
-import type { Book } from '../utils/db';
+import type { Book } from '../../utils/db';
 import { BsArrowReturnLeft } from 'react-icons/bs';
-import { LuChevronRight } from 'react-icons/lu';
+import { TableOfContentsTreeNode, type TreeNode } from './TableOfContentsTreeNode';
 
 export interface TableOfContentsProps {
   book: Book | null;
@@ -14,13 +14,6 @@ export interface TableOfContentsProps {
   onBackToLibrary?: () => void;
 }
 
-interface TreeNode {
-  id: string;
-  name: string;
-  volumeId: string;
-  chapterId?: string;
-  children?: TreeNode[];
-}
 
 export function TableOfContents({
   book,
@@ -161,34 +154,14 @@ export function TableOfContents({
               <TreeView.Tree>
                 <TreeView.Node
                   indentGuide={<TreeView.BranchIndentGuide />}
-                  render={({ node, nodeState }) => {
-                    const treeNode = node as TreeNode;
-                    
-                    if (nodeState.isBranch) {
-                      // Branch node (volume with chapters)
-                      return (
-                        <TreeView.BranchControl>
-                          <TreeView.BranchTrigger>
-                            <TreeView.BranchIndicator asChild>
-                              <Icon><LuChevronRight /></Icon>
-                            </TreeView.BranchIndicator>
-                          </TreeView.BranchTrigger>
-                          <TreeView.BranchText
-                            fontWeight={treeNode.id === currentVolumeId ? 'bold' : 'normal'}
-                          >
-                            {treeNode.name}
-                          </TreeView.BranchText>
-                        </TreeView.BranchControl>
-                      );
-                    } else {
-                      // Leaf node (chapter)
-                      return (
-                        <TreeView.Item onClick={() => handleItemClick(treeNode)}>
-                          <TreeView.ItemText>{treeNode.name}</TreeView.ItemText>
-                        </TreeView.Item>
-                      );
-                    }
-                  }}
+                  render={({ node, nodeState }) => (
+                    <TableOfContentsTreeNode
+                      node={node as TreeNode}
+                      nodeState={nodeState}
+                      currentVolumeId={currentVolumeId}
+                      onItemClick={handleItemClick}
+                    />
+                  )}
                 />
               </TreeView.Tree>
             </TreeView.Root>

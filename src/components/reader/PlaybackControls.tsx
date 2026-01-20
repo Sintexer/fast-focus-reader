@@ -1,5 +1,5 @@
 import { HStack, IconButton } from '@chakra-ui/react';
-import { Tooltip } from './ui/tooltip';
+import { Tooltip } from '../ui/tooltip';
 import { FaPlay, FaPause, FaStepForward, FaStepBackward, FaFastBackward, FaFastForward } from 'react-icons/fa';
 
 export interface PlaybackControlsProps {

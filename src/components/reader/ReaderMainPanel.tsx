@@ -1,12 +1,12 @@
 import { Box, Text } from '@chakra-ui/react';
-import { useTextPlayback } from '../hooks/useTextPlayback';
+import { useTextPlayback } from '../../hooks/useTextPlayback';
 import { useMemo, useEffect, useRef } from 'react';
-import type { Book } from '../utils/db';
-import { getChapterText } from '../utils/bookTextUtils';
-import { ChapterTextContainer } from './reader/ChapterTextContainer';
-import { CurrentWordDisplay } from './reader/CurrentWordDisplay';
-import { TitleDisplay } from './reader/TitleDisplay';
-import type { PlaybackControls } from './reader/types';
+import type { Book } from '../../utils/db';
+import { getChapterText } from '../../utils/bookTextUtils';
+import { ChapterTextContainer } from './ChapterTextContainer';
+import { CurrentWordDisplay } from './CurrentWordDisplay';
+import { TitleDisplay } from './TitleDisplay';
+import type { PlaybackControls } from './types';
 
 export interface ReaderMainPanelProps {
   book: Book | null;

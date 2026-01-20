@@ -1,6 +1,6 @@
 import { Box, Text, HStack, Flex, IconButton } from '@chakra-ui/react';
 import { BsFileText, BsGear } from 'react-icons/bs';
-import { Tooltip } from './ui/tooltip';
+import { Tooltip } from '../ui/tooltip';
 
 export interface ReaderFooterProps {
   currentSentenceIndex: number;

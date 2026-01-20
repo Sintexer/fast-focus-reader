@@ -1,31 +1,28 @@
 import { useState } from 'react';
 import {
-  Box,
   VStack,
   HStack,
   Text,
   Button,
-  Input,
   Textarea,
   Field,
-  NativeSelect,
-  Switch,
   Separator,
   Alert,
-  Code,
   FileUpload,
   Dialog,
   Portal,
   CloseButton,
 } from '@chakra-ui/react';
-import { saveBook, type Book } from '../utils/db';
-import { parseTextToBook, parseFileToBook } from '../utils/bookParser';
-import { toaster } from './ui/toaster';
+import { saveBook, type Book } from '../../utils/db';
+import { parseTextToBook, parseFileToBook } from '../../utils/bookParser';
+import { toaster } from '../ui/toaster';
+import { UploadModeSwitch } from './UploadModeSwitch';
+import { BookPreview } from './BookPreview';
+import { BookUploadForm } from './BookUploadForm';
 
 type UploadMode = 'file' | 'text';
 
 const SUPPORTED_FILE_TYPES = ['.txt', '.epub', '.fb2'];
-const MAX_PREVIEW_LENGTH = 500; // Characters to show in preview
 
 interface BookUploadProps {
   isOpen: boolean;
@@ -172,51 +169,6 @@ export function BookUpload({ isOpen, onClose, onBookSaved }: BookUploadProps) {
     onClose();
   };
   
-  const getPreviewSamples = (): Array<{ chapterTitle?: string; text: string }> => {
-    if (!book) return [];
-    
-    const samples: Array<{ chapterTitle?: string; text: string }> = [];
-    let totalLength = 0;
-    let lastChapterTitle: string | undefined;
-    
-    for (const volume of book.structure.volumes) {
-      for (const chapter of volume.chapters) {
-        if (chapter.paragraphs && chapter.paragraphs.length > 0) {
-          // Add chapter title if it's different from the last one
-          if (chapter.title && chapter.title !== lastChapterTitle) {
-            lastChapterTitle = chapter.title;
-          }
-          
-          for (const paragraph of chapter.paragraphs) {
-            const paragraphText = paragraph.join(' ');
-            if (totalLength + paragraphText.length > MAX_PREVIEW_LENGTH) {
-              // Add partial paragraph if we have space
-              const remaining = MAX_PREVIEW_LENGTH - totalLength;
-              if (remaining > 50) {
-                samples.push({
-                  chapterTitle: lastChapterTitle,
-                  text: paragraphText.slice(0, remaining) + '...',
-                });
-              }
-              return samples;
-            }
-            samples.push({
-              chapterTitle: lastChapterTitle,
-              text: paragraphText,
-            });
-            totalLength += paragraphText.length;
-            lastChapterTitle = undefined; // Only show chapter title for first paragraph
-          }
-        }
-      }
-      
-      // Limit to first few chapters
-      if (samples.length >= 5) break;
-    }
-    
-    return samples;
-  };
-  
   return (
     <Dialog.Root open={isOpen} onOpenChange={(e) => !e.open && handleClose()} size="lg" scrollBehavior="inside">
       <Portal>
@@ -234,31 +186,14 @@ export function BookUpload({ isOpen, onClose, onBookSaved }: BookUploadProps) {
               <VStack align="stretch" gap={6}>
                 {!book && (
                   <>
-                    {/* Upload mode switch */}
-                    <HStack justify="space-between" align="center">
-                      <Text>Upload Mode:</Text>
-                      <HStack>
-                        <Text fontSize="sm" color={uploadMode === 'file' ? 'blue.500' : 'gray.500'}>
-                          File Upload
-                        </Text>
-                        <Switch.Root
-                          checked={uploadMode === 'text'}
-                          onCheckedChange={(e) => {
-                            setUploadMode(e.checked ? 'text' : 'file');
-                            setTextInput('');
-                            setError(null);
-                          }}
-                        >
-                          <Switch.HiddenInput />
-                          <Switch.Control>
-                            <Switch.Thumb />
-                          </Switch.Control>
-                        </Switch.Root>
-                        <Text fontSize="sm" color={uploadMode === 'text' ? 'blue.500' : 'gray.500'}>
-                          Text Input
-                        </Text>
-                      </HStack>
-                    </HStack>
+                    <UploadModeSwitch
+                      mode={uploadMode}
+                      onModeChange={(mode) => {
+                        setUploadMode(mode);
+                        setTextInput('');
+                        setError(null);
+                      }}
+                    />
                     
                     <Separator />
                     
@@ -328,106 +263,18 @@ export function BookUpload({ isOpen, onClose, onBookSaved }: BookUploadProps) {
                   <>
                     <Separator />
                     
-                    <Text fontSize="xl" fontWeight="semibold">
-                      Book Information
-                    </Text>
-                    
-                    <VStack align="stretch" gap={4}>
-                      <Field.Root required>
-                        <Field.Label>
-                          Title <Field.RequiredIndicator />
-                        </Field.Label>
-                        <Input
-                          value={title}
-                          onChange={(e) => setTitle(e.currentTarget.value)}
-                          placeholder="Enter book title"
-                        />
-                      </Field.Root>
-                      
-                      <Field.Root>
-                        <Field.Label>Author</Field.Label>
-                        <Input
-                          value={author}
-                          onChange={(e) => setAuthor(e.currentTarget.value)}
-                          placeholder="Enter author name"
-                        />
-                      </Field.Root>
-                      
-                      <Field.Root required>
-                        <Field.Label>
-                          Language <Field.RequiredIndicator />
-                        </Field.Label>
-                        <NativeSelect.Root>
-                          <NativeSelect.Field
-                            value={language}
-                            onChange={(e) => setLanguage(e.currentTarget.value as 'en' | 'ru')}
-                          >
-                            <option value="en">English</option>
-                            <option value="ru">Russian</option>
-                          </NativeSelect.Field>
-                          <NativeSelect.Indicator />
-                        </NativeSelect.Root>
-                      </Field.Root>
-                    </VStack>
+                    <BookUploadForm
+                      title={title}
+                      author={author}
+                      language={language}
+                      onTitleChange={setTitle}
+                      onAuthorChange={setAuthor}
+                      onLanguageChange={setLanguage}
+                    />
                     
                     <Separator />
                     
-                    {/* Preview samples */}
-                    <VStack align="stretch" gap={4}>
-                      <Text fontSize="lg" fontWeight="semibold">
-                        Preview (First Chapters)
-                      </Text>
-                      
-                      <Box
-                        p={4}
-                        borderWidth="1px"
-                        borderRadius="md"
-                        borderColor="gray.200"
-                        _dark={{ borderColor: 'gray.700', bg: 'gray.800' }}
-                        bg="gray.50"
-                        maxH="300px"
-                        overflowY="auto"
-                      >
-                        <VStack align="stretch" gap={3}>
-                          {getPreviewSamples().map((sample, index) => (
-                            <Box key={index}>
-                              {sample.chapterTitle && (
-                                <Text
-                                  fontSize="sm"
-                                  fontWeight="semibold"
-                                  color="blue.600"
-                                  _dark={{ color: 'blue.400' }}
-                                  mb={1}
-                                >
-                                  {sample.chapterTitle}
-                                </Text>
-                              )}
-                              <Code
-                                display="block"
-                                p={2}
-                                fontSize="xs"
-                                whiteSpace="pre-wrap"
-                                wordBreak="break-word"
-                                bg="transparent"
-                                color="gray.700"
-                                _dark={{ color: 'gray.300' }}
-                              >
-                                {sample.text}
-                              </Code>
-                            </Box>
-                          ))}
-                          {getPreviewSamples().length === 0 && (
-                            <Text fontSize="sm" color="gray.500">
-                              No preview available
-                            </Text>
-                          )}
-                        </VStack>
-                      </Box>
-                      
-                      <Text fontSize="xs" color="gray.500" fontStyle="italic">
-                        This preview shows the first few paragraphs to help verify the import. The content cannot be edited here.
-                      </Text>
-                    </VStack>
+                    <BookPreview book={book} />
                   </>
                 )}
               </VStack>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, Container, VStack, HStack, Text, SimpleGrid, Button } from '@chakra-ui/react';
-import { getAllBooks, saveBook, type Book } from '../utils/db';
+import { getAllBooks, saveBook, type Book } from '../../utils/db';
 import { BookUpload } from './BookUpload';
 
 
