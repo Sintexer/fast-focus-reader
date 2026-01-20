@@ -10,6 +10,16 @@ export interface ReaderFooterProps {
   showChapterView?: boolean;
   onToggleChapterView?: () => void;
   onOpenSettings?: () => void;
+  onWPMClick?: () => void;
+}
+
+export interface ReaderFooterProps {
+  currentSentenceIndex: number;
+  maxSentenceIndex: number;
+  wpm: number;
+  showChapterView?: boolean;
+  onToggleChapterView?: () => void;
+  onOpenSettings?: () => void;
 }
 
 /**
@@ -24,6 +34,7 @@ export function ReaderFooter({
   showChapterView = false,
   onToggleChapterView,
   onOpenSettings,
+  onWPMClick,
 }: ReaderFooterProps) {
   const { t } = useI18n();
   
@@ -65,8 +76,15 @@ export function ReaderFooter({
 
         {/* Right flex: WPM and settings button */}
         <Flex flex="1" justifyContent="space-between" alignItems="center" gap={2}>
-          {/* WPM */}
-          <Text fontSize="xs" color="gray.500" _dark={{ color: 'gray.400' }}>
+          {/* WPM - clickable */}
+          <Text
+            fontSize="xs"
+            color="gray.500"
+            _dark={{ color: 'gray.400' }}
+            cursor={onWPMClick ? 'pointer' : 'default'}
+            onClick={onWPMClick}
+            _hover={onWPMClick ? { textDecoration: 'underline' } : {}}
+          >
             {t('speed')}: {wpm} {t('wpm')}
           </Text>
 

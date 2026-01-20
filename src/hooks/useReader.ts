@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { saveProgress, getProgress, type Settings, type Book } from '../utils/db';
+import { saveProgress, getProgress, type Settings, type Book, getInitialWPM } from '../utils/db';
 import { getWordParts, type EnrichedWord } from '../utils/textProcessor';
 import { BookIterator } from '../utils/bookIterator';
+import { getStoredWPM, storeWPM, updateWPMTimestamp } from '../utils/wpmStorage';
 
 export interface ReaderState {
   volumeId: string;
@@ -27,6 +28,23 @@ interface UseReaderOptions {
 export function useReader({ book, bookId, settings }: UseReaderOptions) {
   const iteratorRef = useRef<BookIterator | null>(null);
   
+  // Initialize WPM from localStorage if valid, otherwise use getInitialWPM
+  const initialWPM = (() => {
+    const storedWPM = getStoredWPM();
+    if (storedWPM !== null) {
+      // Ensure stored WPM is within valid range
+      if (settings.dynamicWPMEnabled) {
+        const minWPM = settings.minWPM ?? 50;
+        const maxWPM = settings.maxWPMRange ?? 1200;
+        return Math.max(minWPM, Math.min(maxWPM, storedWPM));
+      } else {
+        // For static mode, just use stored value (it should be within valid range)
+        return storedWPM;
+      }
+    }
+    return getInitialWPM(settings);
+  })();
+  
   const [state, setState] = useState<ReaderState>({
     volumeId: '',
     chapterId: '',
@@ -34,7 +52,7 @@ export function useReader({ book, bookId, settings }: UseReaderOptions) {
     wordIndex: 0,
     paragraphIndex: 0,
     isPlaying: false,
-    currentWPM: settings.initWPM,
+    currentWPM: initialWPM,
     showFullSentence: false,
     showingTitle: null,
     previousVolumeId: '',
@@ -150,8 +168,22 @@ export function useReader({ book, bookId, settings }: UseReaderOptions) {
   // Reset warmup when settings change
   useEffect(() => {
     warmupStartTimeRef.current = null;
-    setState((prev) => ({ ...prev, currentWPM: settings.initWPM }));
-  }, [settings.initWPM, settings.maxWPM, settings.warmupDuration]);
+    // When settings change, try to get stored WPM first, otherwise use getInitialWPM
+    const storedWPM = getStoredWPM();
+    let newWPM: number;
+    if (storedWPM !== null) {
+      if (settings.dynamicWPMEnabled) {
+        const minWPM = settings.minWPM ?? 50;
+        const maxWPM = settings.maxWPMRange ?? 1200;
+        newWPM = Math.max(minWPM, Math.min(maxWPM, storedWPM));
+      } else {
+        newWPM = storedWPM;
+      }
+    } else {
+      newWPM = getInitialWPM(settings);
+    }
+    setState((prev) => ({ ...prev, currentWPM: newWPM }));
+  }, [settings.initWPM, settings.maxWPM, settings.warmupDuration, settings.minWPM, settings.maxWPMRange, settings.dynamicWPMEnabled, settings.staticWPM]);
   
   // Calculate current WPM with warmup
   const calculateCurrentWPM = useCallback(() => {
@@ -873,6 +905,8 @@ export function useReader({ book, bookId, settings }: UseReaderOptions) {
   const setWPM = useCallback((wpm: number) => {
     setState((prev) => ({ ...prev, currentWPM: wpm }));
     warmupStartTimeRef.current = null;
+    // Store WPM in localStorage
+    storeWPM(wpm);
   }, []);
   
   // Toggle full sentence display
@@ -903,6 +937,8 @@ export function useReader({ book, bookId, settings }: UseReaderOptions) {
       
       const currentWPM = calculateCurrentWPM();
       setState((prev) => ({ ...prev, currentWPM: currentWPM }));
+      // Store WPM in localStorage whenever it changes
+      storeWPM(currentWPM);
       
       const interval = (60 / currentWPM) * 1000;
       
@@ -936,6 +972,22 @@ export function useReader({ book, bookId, settings }: UseReaderOptions) {
       });
     }
   }, [bookId, book, state.volumeId, state.chapterId, state.sentenceIndex, state.wordIndex]);
+  
+  // Update WPM timestamp periodically while reading (every 30 seconds)
+  // This marks the app as "in use" to prevent WPM expiration
+  useEffect(() => {
+    if (!book) return;
+    
+    // Update timestamp immediately when book is loaded
+    updateWPMTimestamp();
+    
+    // Then update every 30 seconds while book is open
+    const interval = setInterval(() => {
+      updateWPMTimestamp();
+    }, 30000); // 30 seconds
+    
+    return () => clearInterval(interval);
+  }, [book]);
   
   // Calculate progress percentage (approximate based on chapters)
   const progress = book ? 0 : 0; // TODO: Calculate based on chapter progress

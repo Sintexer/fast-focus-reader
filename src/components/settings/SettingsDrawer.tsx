@@ -2,8 +2,10 @@ import { Drawer, Portal, VStack, Separator, CloseButton } from '@chakra-ui/react
 import { AutoStopSettings } from './AutoStopSettings';
 import { ThemeSettings } from './ThemeSettings';
 import { ReaderControlsSettings } from './ReaderControlsSettings';
+import { WPMSettings } from './WPMSettings';
 import type { SettingsDrawerProps } from './types';
 import { useI18n } from '../../i18n/useI18n';
+import type { Settings } from '../../utils/db';
 
 /**
  * Settings drawer component that slides up from the bottom
@@ -16,6 +18,9 @@ export function SettingsDrawer({
   onAutoStopModeChange,
   showControls,
   onShowControlsChange,
+  settings,
+  onSettingsChange,
+  onWPMChange,
 }: SettingsDrawerProps) {
   const { t } = useI18n();
   
@@ -50,11 +55,22 @@ export function SettingsDrawer({
 
                 <Separator />
 
+                {/* WPM settings */}
+                {settings && (
+                  <>
+                    <WPMSettings
+                      settings={settings}
+                      onSettingsChange={onSettingsChange}
+                      onWPMChange={onWPMChange}
+                    />
+                    <Separator />
+                  </>
+                )}
+
                 {/* Theme settings */}
                 <ThemeSettings />
 
                 {/* Placeholder for future settings */}
-                {/* WPM settings will be added here */}
                 {/* Font selection will be added here */}
               </VStack>
             </Drawer.Body>

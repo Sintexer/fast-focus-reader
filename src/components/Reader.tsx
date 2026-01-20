@@ -1,7 +1,8 @@
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {useLocation, useNavigate, useParams} from 'react-router-dom';
 import {useReader} from '../hooks/useReader';
-import {type Book, getBook, getSettingsOrDefault, saveSettings, type Settings} from '../utils/db';
+import {type Book, getBook, getSettingsOrDefault, saveSettings, type Settings, getInitialWPM} from '../utils/db';
+import {getStoredWPM} from '../utils/wpmStorage';
 import {ReaderMainPanel} from './reader/ReaderMainPanel';
 import {ReaderControlsPanel, type ReaderControlsPanelRef} from './reader/ReaderControlsPanel';
 import {Box, Container, Flex, Text} from '@chakra-ui/react';
@@ -10,6 +11,7 @@ import {ReaderHeader} from './reader/ReaderHeader';
 import {ReaderFooter} from './reader/ReaderFooter';
 import {BookEnd} from './reader/BookEnd';
 import {SettingsDrawer} from './settings/SettingsDrawer';
+import {WPMInfoModal} from './reader/WPMInfoModal';
 import type {PlaybackControls} from './reader/types';
 import type {AutoStopMode} from './settings/types';
 import {useI18n} from '../i18n/useI18n';
@@ -30,6 +32,8 @@ export function Reader() {
     const [showControls, setShowControls] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
     const [showBookEnd, setShowBookEnd] = useState(false);
+    const [showWPMModal, setShowWPMModal] = useState(false);
+    const [initialWPM, setInitialWPM] = useState<number | null>(null);
 
     // Load settings on mount
     useEffect(() => {
@@ -41,6 +45,22 @@ export function Reader() {
             }
             if (s.showControls !== undefined) {
                 setShowControls(s.showControls);
+            }
+            
+            // Initialize WPM from localStorage if valid, otherwise use getInitialWPM
+            const storedWPM = getStoredWPM();
+            if (storedWPM !== null) {
+                // Ensure stored WPM is within valid range
+                if (s.dynamicWPMEnabled) {
+                    const minWPM = s.minWPM ?? 50;
+                    const maxWPM = s.maxWPMRange ?? 1200;
+                    const validWPM = Math.max(minWPM, Math.min(maxWPM, storedWPM));
+                    setInitialWPM(validWPM);
+                } else {
+                    setInitialWPM(storedWPM);
+                }
+            } else {
+                setInitialWPM(getInitialWPM(s));
             }
         });
     }, []);
@@ -163,6 +183,20 @@ export function Reader() {
         setShowSettings(false);
     }, []);
 
+    const handleOpenWPMModal = useCallback(() => {
+        setShowWPMModal(true);
+    }, []);
+
+    const handleCloseWPMModal = useCallback(() => {
+        setShowWPMModal(false);
+    }, []);
+
+    const handleResetWPM = useCallback(() => {
+        if (!settings) return;
+        const initialWPMValue = getInitialWPM(settings);
+        reader.setWPM(initialWPMValue);
+    }, [settings, reader]);
+
     // Save UI settings when they change
     const handleAutoStopModeChange = useCallback(async (mode: AutoStopMode) => {
         setAutoStopMode(mode);
@@ -187,6 +221,15 @@ export function Reader() {
             setSettings(updatedSettings);
         }
     }, [settings, handleShowControlsChange]);
+
+    const handleSettingsChange = useCallback(async (updatedSettings: Settings) => {
+        await saveSettings(updatedSettings);
+        setSettings(updatedSettings);
+    }, []);
+
+    const handleWPMChange = useCallback((wpm: number) => {
+        reader.setWPM(wpm);
+    }, [reader]);
 
     // Memoize isStoppedAtSentenceEnd calculation to avoid render loops
     const isStoppedAtSentenceEnd = useMemo(() => {
@@ -286,7 +329,7 @@ export function Reader() {
                                     book={book}
                                     volumeId={reader.state.volumeId}
                                     chapterId={reader.state.chapterId}
-                                    initialWPM={settings.initWPM}
+                                    initialWPM={initialWPM ?? settings?.initWPM ?? 200}
                                     autoStopOnSentenceEnd={autoStopMode === 'sentence' || autoStopMode === 'paragraph'}
                                     autoStopOnParagraphEnd={autoStopMode === 'paragraph'}
                                     onPlaybackReady={handlePlaybackReady}
@@ -336,6 +379,7 @@ export function Reader() {
                                 showChapterView={showChapterView}
                                 onToggleChapterView={handleToggleChapterView}
                                 onOpenSettings={handleOpenSettings}
+                                onWPMClick={handleOpenWPMModal}
                             />
                         </Box>
                     )}
@@ -350,7 +394,22 @@ export function Reader() {
                 onAutoStopModeChange={handleAutoStopModeChange}
                 showControls={showControls}
                 onShowControlsChange={handleShowControlsChangeWithSave}
+                settings={settings}
+                onSettingsChange={handleSettingsChange}
+                onWPMChange={handleWPMChange}
             />
+
+            {/* WPM Info Modal */}
+            {settings && (
+                <WPMInfoModal
+                    isOpen={showWPMModal}
+                    onClose={handleCloseWPMModal}
+                    currentWPM={reader.state.currentWPM}
+                    settings={settings}
+                    onResetWPM={handleResetWPM}
+                    onOpenSettings={handleOpenSettings}
+                />
+            )}
         </>
     );
 }

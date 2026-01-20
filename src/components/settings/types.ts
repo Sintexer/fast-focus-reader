@@ -1,3 +1,5 @@
+import type { Settings } from '../../utils/db';
+
 export type AutoStopMode = 'disabled' | 'sentence' | 'paragraph';
 
 /**
@@ -10,6 +12,9 @@ export interface SettingsDrawerProps {
   onAutoStopModeChange: (mode: AutoStopMode) => void;
   showControls: boolean;
   onShowControlsChange: (show: boolean) => void;
+  settings: Settings | null;
+  onSettingsChange: (settings: Settings) => void;
+  onWPMChange?: (wpm: number) => void;
 }
 
 /**

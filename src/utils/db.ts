@@ -51,6 +51,10 @@ export interface Progress {
 export interface Settings {
   initWPM: number;
   maxWPM: number;
+  minWPM?: number; // Minimum WPM for dynamic range
+  maxWPMRange?: number; // Maximum WPM for dynamic range
+  staticWPM?: number; // Static WPM when dynamic WPM is disabled
+  dynamicWPMEnabled?: boolean; // Enable/disable dynamic WPM adjustment
   warmupDuration: number; // milliseconds
   autoStopMode?: 'disabled' | 'sentence' | 'paragraph';
   showControls?: boolean;
@@ -211,6 +215,10 @@ export async function getSettingsOrDefault(): Promise<Settings> {
   const defaultSettings: Settings = {
     initWPM: 200,
     maxWPM: 400,
+    minWPM: 50,
+    maxWPMRange: 1200,
+    staticWPM: 200,
+    dynamicWPMEnabled: false,
     warmupDuration: 60000, // 60 seconds
   };
   
@@ -229,4 +237,16 @@ export async function saveLocale(locale: Locale): Promise<void> {
 export async function getLocale(): Promise<Locale | undefined> {
   const db = await getDB();
   return db.get('locale', LOCALE_KEY);
+}
+
+/**
+ * Get initial WPM based on settings
+ * Returns minWPM if dynamic WPM is enabled, staticWPM otherwise
+ */
+export function getInitialWPM(settings: Settings): number {
+  if (settings.dynamicWPMEnabled) {
+    return settings.minWPM ?? 50;
+  } else {
+    return settings.staticWPM ?? settings.initWPM ?? 200;
+  }
 }
