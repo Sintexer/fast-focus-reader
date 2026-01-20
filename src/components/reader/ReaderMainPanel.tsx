@@ -81,7 +81,7 @@ export function ReaderMainPanel({
   const currentWord = playback.currentWord;
   const currentSentence = playback.currentSentence;
 
-  const playbackControls: PlaybackControls = useMemo(
+    const playbackControls: PlaybackControls = useMemo(
     () => ({
       isPlaying: playback.isPlaying,
       play: playback.play,
@@ -95,6 +95,7 @@ export function ReaderMainPanel({
       advanceToNextSentence: playback.advanceToNextSentence,
       isStoppedAtSentenceEnd: playback.isStoppedAtSentenceEnd,
       currentSentenceIndex: playback.currentSentenceIndex,
+      currentWordIndex: playback.currentWordIndex,
       maxSentenceIndex: playback.maxSentenceIndex,
       wpm: playback.wpm,
     }),
@@ -111,6 +112,7 @@ export function ReaderMainPanel({
       playback.advanceToNextSentence,
       playback.isStoppedAtSentenceEnd,
       playback.currentSentenceIndex,
+      playback.currentWordIndex,
       playback.maxSentenceIndex,
       playback.wpm,
     ]

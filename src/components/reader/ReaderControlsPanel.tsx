@@ -1,4 +1,4 @@
-import { useState, useImperativeHandle, forwardRef } from 'react';
+import { useImperativeHandle, forwardRef } from 'react';
 import { Box, VStack, HStack, IconButton, Flex } from '@chakra-ui/react';
 import { FaPlay, FaPause, FaRedo, FaArrowRight } from 'react-icons/fa';
 import { Tooltip } from '../ui/tooltip';
@@ -17,8 +17,11 @@ export interface ReaderControlsPanelProps {
   onRestartSentence: () => void;
   onAdvanceToNextSentence: () => void;
   isStoppedAtSentenceEnd: boolean;
+  currentSentenceIndex?: number;
+  currentWordIndex?: number;
   disabled?: boolean;
   onViewChange?: (isMinimal: boolean) => void;
+  initialView?: 'minimal' | 'advanced';
 }
 
 export interface ReaderControlsPanelRef {
@@ -39,23 +42,31 @@ export const ReaderControlsPanel = forwardRef<ReaderControlsPanelRef, ReaderCont
       onRestartSentence,
       onAdvanceToNextSentence,
       isStoppedAtSentenceEnd,
+      currentSentenceIndex = 0,
+      currentWordIndex = 0,
       disabled = false,
       onViewChange,
+      initialView = 'minimal',
     },
     ref
   ) => {
     const { t } = useI18n();
-    const [isMinimalView, setIsMinimalView] = useState(true);
+    // Make view state fully controlled by initialView prop
+    const isMinimalView = initialView === 'minimal';
+    
+    // Check if we're at the start (sentence 0, word 0)
+    const isAtStart = currentSentenceIndex === 0 && currentWordIndex === 0;
 
     useImperativeHandle(ref, () => ({
       toggleView: () => {
-        setIsMinimalView((prev) => {
-          const newValue = !prev;
-          onViewChange?.(newValue);
-          return newValue;
-        });
+        // Just notify parent to toggle - parent will update initialView prop
+        const newIsMinimal = !isMinimalView;
+        // Defer the callback to avoid updating parent during render
+        setTimeout(() => {
+          onViewChange?.(newIsMinimal);
+        }, 0);
       },
-    }));
+    }), [isMinimalView, onViewChange]);
 
     if (isMinimalView) {
       return ( // todo fix up the sticcky next button in simple view - it attached to the right border
@@ -156,12 +167,12 @@ export const ReaderControlsPanel = forwardRef<ReaderControlsPanelRef, ReaderCont
           <Tooltip 
             content={t('resetToBeginning')} 
             positioning={{ placement: 'top' }}
-            disabled={disabled}
+            disabled={disabled || isAtStart}
           >
             <IconButton
               aria-label={t('resetToBeginning')}
               onClick={onReset}
-              disabled={disabled}
+              disabled={disabled || isAtStart}
               size="lg"
               variant="ghost"
               colorPalette="gray"

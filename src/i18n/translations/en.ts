@@ -39,7 +39,6 @@ export const en = {
   advancedControls: 'Advanced Controls',
   advancedControlsDescription: 'Show advanced playback controls (word navigation, reset, etc.)',
   theme: 'Theme',
-  themeDescription: 'Choose your preferred color theme',
   light: 'Light',
   dark: 'Dark',
   system: 'System',

@@ -52,6 +52,8 @@ export interface Settings {
   initWPM: number;
   maxWPM: number;
   warmupDuration: number; // milliseconds
+  autoStopMode?: 'disabled' | 'sentence' | 'paragraph';
+  showControls?: boolean;
 }
 
 export type Locale = 'en' | 'ru';

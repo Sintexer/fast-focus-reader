@@ -16,6 +16,7 @@ export interface PlaybackControls {
   advanceToNextSentence: () => void;
   isStoppedAtSentenceEnd: boolean;
   currentSentenceIndex: number;
+  currentWordIndex: number;
   maxSentenceIndex: number;
   wpm: number;
 }

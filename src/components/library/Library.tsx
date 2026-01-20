@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Box, Container, VStack, HStack, Text, SimpleGrid, Flex, Button } from '@chakra-ui/react';
 import { BsPlus } from 'react-icons/bs';
 import { Tooltip } from '../ui/tooltip';
-import { getAllBooks, saveBook, type Book } from '../../utils/db';
+import { getAllBooks, saveBook, getSettingsOrDefault, saveSettings, type Book, type Settings } from '../../utils/db';
 import { BookUpload } from './BookUpload';
 import { LibraryFooter } from './LibraryFooter';
 import { LanguageSelectionDrawer } from './LanguageSelectionDrawer';
@@ -41,6 +41,20 @@ export function Library() {
   const [showLanguageSelection, setShowLanguageSelection] = useState(false);
   const [autoStopMode, setAutoStopMode] = useState<AutoStopMode>('sentence');
   const [showControls, setShowControls] = useState(false);
+  const [settings, setSettings] = useState<Settings | null>(null);
+
+  // Load settings on mount
+  useEffect(() => {
+    getSettingsOrDefault().then((s) => {
+      setSettings(s);
+      if (s.autoStopMode) {
+        setAutoStopMode(s.autoStopMode);
+      }
+      if (s.showControls !== undefined) {
+        setShowControls(s.showControls);
+      }
+    });
+  }, []);
 
   const loadBooks = async () => {
     const loadedBooks = await getAllBooks();
@@ -335,9 +349,29 @@ export function Library() {
         isOpen={showSettings}
         onClose={() => setShowSettings(false)}
         autoStopMode={autoStopMode}
-        onAutoStopModeChange={setAutoStopMode}
+        onAutoStopModeChange={async (mode: AutoStopMode) => {
+          setAutoStopMode(mode);
+          if (settings) {
+            const updatedSettings: Settings = {
+              ...settings,
+              autoStopMode: mode,
+            };
+            await saveSettings(updatedSettings);
+            setSettings(updatedSettings);
+          }
+        }}
         showControls={showControls}
-        onShowControlsChange={setShowControls}
+        onShowControlsChange={async (show: boolean) => {
+          setShowControls(show);
+          if (settings) {
+            const updatedSettings: Settings = {
+              ...settings,
+              showControls: show,
+            };
+            await saveSettings(updatedSettings);
+            setSettings(updatedSettings);
+          }
+        }}
       />
       
       <LanguageSelectionDrawer

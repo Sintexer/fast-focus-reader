@@ -1,4 +1,4 @@
-import { Drawer, Portal, VStack, Separator, CloseButton, Field, SegmentGroup } from '@chakra-ui/react';
+import { Drawer, Portal, VStack, CloseButton, Field, SegmentGroup } from '@chakra-ui/react';
 import { useI18n } from '../../i18n/useI18n';
 import type { Locale } from '../../i18n/types';
 

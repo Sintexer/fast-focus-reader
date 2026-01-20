@@ -1,7 +1,7 @@
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {useLocation, useNavigate, useParams} from 'react-router-dom';
 import {useReader} from '../hooks/useReader';
-import {type Book, getBook, getSettingsOrDefault, type Settings} from '../utils/db';
+import {type Book, getBook, getSettingsOrDefault, saveSettings, type Settings} from '../utils/db';
 import {ReaderMainPanel} from './reader/ReaderMainPanel';
 import {ReaderControlsPanel, type ReaderControlsPanelRef} from './reader/ReaderControlsPanel';
 import {Box, Container, Flex, Text} from '@chakra-ui/react';
@@ -35,6 +35,13 @@ export function Reader() {
     useEffect(() => {
         getSettingsOrDefault().then((s) => {
             setSettings(s);
+            // Load UI settings
+            if (s.autoStopMode) {
+                setAutoStopMode(s.autoStopMode);
+            }
+            if (s.showControls !== undefined) {
+                setShowControls(s.showControls);
+            }
         });
     }, []);
 
@@ -76,16 +83,9 @@ export function Reader() {
     }, []);
 
     const handleShowControlsChange = useCallback((show: boolean) => {
-        // If toggling on and currently in minimal view, switch to advanced
-        if (show && !showControls) {
-            controlsPanelRef.current?.toggleView();
-        }
-        // If toggling off and currently in advanced view, switch to minimal
-        if (!show && showControls) {
-            controlsPanelRef.current?.toggleView();
-        }
-        // State will be updated by handleControlsViewChange callback
-    }, [showControls]);
+        // Just update the state - the initialView prop will update and panel will sync
+        setShowControls(show);
+    }, []);
 
     const handleToggleChapterView = useCallback(() => {
         setShowChapterView((prev) => !prev);
@@ -162,6 +162,31 @@ export function Reader() {
     const handleCloseSettings = useCallback(() => {
         setShowSettings(false);
     }, []);
+
+    // Save UI settings when they change
+    const handleAutoStopModeChange = useCallback(async (mode: AutoStopMode) => {
+        setAutoStopMode(mode);
+        if (settings) {
+            const updatedSettings: Settings = {
+                ...settings,
+                autoStopMode: mode,
+            };
+            await saveSettings(updatedSettings);
+            setSettings(updatedSettings);
+        }
+    }, [settings]);
+
+    const handleShowControlsChangeWithSave = useCallback(async (show: boolean) => {
+        handleShowControlsChange(show);
+        if (settings) {
+            const updatedSettings: Settings = {
+                ...settings,
+                showControls: show,
+            };
+            await saveSettings(updatedSettings);
+            setSettings(updatedSettings);
+        }
+    }, [settings, handleShowControlsChange]);
 
     // Memoize isStoppedAtSentenceEnd calculation to avoid render loops
     const isStoppedAtSentenceEnd = useMemo(() => {
@@ -291,8 +316,11 @@ export function Reader() {
                                     onRestartSentence={playbackControls.restartSentence}
                                     onAdvanceToNextSentence={handleAdvanceToNextSentence}
                                     isStoppedAtSentenceEnd={isStoppedAtSentenceEnd}
+                                    currentSentenceIndex={playbackControls.currentSentenceIndex}
+                                    currentWordIndex={playbackControls.currentWordIndex}
                                     disabled={false}
                                     onViewChange={handleControlsViewChange}
+                                    initialView={showControls ? 'advanced' : 'minimal'}
                                 />
                             </Box>
                         )}
@@ -319,9 +347,9 @@ export function Reader() {
                 isOpen={showSettings}
                 onClose={handleCloseSettings}
                 autoStopMode={autoStopMode}
-                onAutoStopModeChange={setAutoStopMode}
+                onAutoStopModeChange={handleAutoStopModeChange}
                 showControls={showControls}
-                onShowControlsChange={handleShowControlsChange}
+                onShowControlsChange={handleShowControlsChangeWithSave}
             />
         </>
     );
