@@ -109,8 +109,8 @@ export function FontSettings({
                 w="6px"
                 h="6px"
                 borderRadius="full"
-                bg={index === activeFontIndex ? 'blue.500' : 'gray.300'}
-                _dark={{ bg: index === activeFontIndex ? 'blue.400' : 'gray.600' }}
+                bg={index === activeFontIndex ? 'green.500' : 'gray.300'}
+                _dark={{ bg: index === activeFontIndex ? 'green.400' : 'gray.600' }}
                 transition="background-color 0.2s"
               />
             ))}

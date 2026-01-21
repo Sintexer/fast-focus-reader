@@ -79,8 +79,8 @@ export function BookPreview({ book }: BookPreviewProps) {
                 <Text
                   fontSize="sm"
                   fontWeight="semibold"
-                  color="blue.600"
-                  _dark={{ color: 'blue.400' }}
+                  color="green.600"
+                  _dark={{ color: 'green.400' }}
                   mb={1}
                 >
                   {sample.chapterTitle}

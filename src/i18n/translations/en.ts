@@ -5,6 +5,18 @@ export const en = {
   loadingBooks: 'Loading books...',
   noBooksAvailable: 'No books available. Please add a book to get started.',
   chapters: 'chapters',
+  volumes: 'volumes',
+  read: 'Read',
+  back: 'Back',
+  edit: 'Edit',
+  delete: 'Delete',
+  deleteBook: 'Delete Book',
+  deleteBookConfirmation: 'Are you sure you want to delete this book? This action cannot be undone.',
+  bookDeletedSuccessfully: 'Book deleted successfully',
+  failedToDeleteBook: 'Failed to delete book: {error}',
+  editBook: 'Edit Book',
+  bookUpdatedSuccessfully: 'Book updated successfully',
+  failedToUpdateBook: 'Failed to update book: {error}',
   
   // Reader
   loading: 'Loading...',

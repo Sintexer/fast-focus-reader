@@ -15,7 +15,7 @@ export function UploadModeSwitch({ mode, onModeChange }: UploadModeSwitchProps) 
     <HStack justify="space-between" align="center">
       <Text>{t('uploadMode')}</Text>
       <HStack>
-        <Text fontSize="sm" color={mode === 'file' ? 'blue.500' : 'gray.500'}>
+        <Text fontSize="sm" color={mode === 'file' ? 'green.500' : 'gray.500'}>
           {t('fileUpload')}
         </Text>
         <Switch.Root
@@ -29,7 +29,7 @@ export function UploadModeSwitch({ mode, onModeChange }: UploadModeSwitchProps) 
             <Switch.Thumb />
           </Switch.Control>
         </Switch.Root>
-        <Text fontSize="sm" color={mode === 'text' ? 'blue.500' : 'gray.500'}>
+        <Text fontSize="sm" color={mode === 'text' ? 'green.500' : 'gray.500'}>
           {t('textInput')}
         </Text>
       </HStack>

@@ -113,8 +113,8 @@ export function ChapterTextView({
       <Box
         ref={sentenceRef}
         as="span"
-        color="blue.600"
-        _dark={{ color: 'blue.400' }}
+        color="green.600"
+        _dark={{ color: 'green.400' }}
         style={{
           fontSize: 'inherit',
           lineHeight: 'inherit',
@@ -124,11 +124,11 @@ export function ChapterTextView({
       >
         {textSegments.sentenceTextBeforeWord}
         <Mark
-          bg="blue.200"
-          color="blue.900"
+          bg="green.200"
+          color="green.900"
           _dark={{
-            bg: 'blue.800',
-            color: 'blue.100',
+            bg: 'green.800',
+            color: 'green.100',
           }}
           style={{
             fontSize: 'inherit',

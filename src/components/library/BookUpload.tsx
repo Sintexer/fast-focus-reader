@@ -210,7 +210,7 @@ export function BookUpload({ isOpen, onClose, onBookSaved }: BookUploadProps) {
                           >
                             <FileUpload.HiddenInput />
                             <FileUpload.Trigger asChild>
-                              <Button colorPalette="blue" width="full" loading={loading}>
+                              <Button colorPalette="green" width="full" loading={loading}>
                                 {t('chooseFile')}
                               </Button>
                             </FileUpload.Trigger>
@@ -240,7 +240,7 @@ export function BookUpload({ isOpen, onClose, onBookSaved }: BookUploadProps) {
                         
                         <Button
                           onClick={handleProcessText}
-                          colorPalette="blue"
+                          colorPalette="green"
                           loading={loading}
                           disabled={!textInput.trim()}
                         >
@@ -289,7 +289,7 @@ export function BookUpload({ isOpen, onClose, onBookSaved }: BookUploadProps) {
                   </Button>
                   <Button
                     onClick={handleSave}
-                    colorPalette="blue"
+                    colorPalette="green"
                     loading={loading}
                     disabled={!title.trim()}
                   >

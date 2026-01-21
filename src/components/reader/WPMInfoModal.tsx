@@ -127,7 +127,7 @@ export function WPMInfoModal({
                     variant="plain"
                     size="xs"
                     onClick={handleOpenSettings}
-                    colorPalette="blue"
+                    colorPalette="green"
                     p={0}
                     h="auto"
                     minH="auto"

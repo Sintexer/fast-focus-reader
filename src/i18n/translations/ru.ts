@@ -5,6 +5,18 @@ export const ru = {
   loadingBooks: 'Загрузка книг...',
   noBooksAvailable: 'Книги отсутствуют. Пожалуйста, добавьте книгу для начала работы.',
   chapters: 'глав',
+  volumes: 'томов',
+  read: 'Читать',
+  back: 'Назад',
+  edit: 'Редактировать',
+  delete: 'Удалить',
+  deleteBook: 'Удалить книгу',
+  deleteBookConfirmation: 'Вы уверены, что хотите удалить эту книгу? Это действие нельзя отменить.',
+  bookDeletedSuccessfully: 'Книга успешно удалена',
+  failedToDeleteBook: 'Не удалось удалить книгу: {error}',
+  editBook: 'Редактировать книгу',
+  bookUpdatedSuccessfully: 'Книга успешно обновлена',
+  failedToUpdateBook: 'Не удалось обновить книгу: {error}',
   
   // Reader
   loading: 'Загрузка...',

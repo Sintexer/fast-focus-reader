@@ -154,7 +154,7 @@ export function TableOfContents({
               selectionMode="single"
               selectedValue={currentChapterId ? [currentChapterId] : undefined}
               defaultExpandedValue={hasRealVolumes ? [currentVolumeId] : undefined}
-              colorPalette="blue"
+              colorPalette="green"
               size="sm"
               variant="subtle"
             >

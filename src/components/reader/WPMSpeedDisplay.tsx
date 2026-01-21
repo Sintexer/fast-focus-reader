@@ -10,7 +10,7 @@ export interface WPMSpeedDisplayProps {
 
 /**
  * Component for displaying WPM speed with appropriate color and icon
- * - <= 200: Blue with ice icon
+ * - <= 200: Green with ice icon
  * - > 600: Orange/Red with fire icon
  * - Otherwise: Default color, no icon
  */
@@ -23,7 +23,7 @@ export function WPMSpeedDisplay({
   const isSlow = wpm <= 200;
   const isFast = wpm > 600;
   
-  const color = isSlow ? 'blue.500' : isFast ? 'red.500' : undefined;
+  const color = isSlow ? 'green.500' : isFast ? 'red.500' : undefined;
   const icon = isSlow ? <BsCupStraw /> : isFast ? <BsFire /> : null;
   
   const textElement = (

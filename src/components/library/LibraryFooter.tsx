@@ -1,6 +1,7 @@
-import { Box, Text, HStack, Flex, IconButton } from '@chakra-ui/react';
+import { Box, Text, HStack, Flex } from '@chakra-ui/react';
 import { BsGear } from 'react-icons/bs';
 import { Tooltip } from '../ui/tooltip';
+import { MinimalIconButton } from '../ui/MinimalIconButton';
 import { useI18n } from '../../i18n/useI18n';
 
 export interface LibraryFooterProps {
@@ -45,22 +46,13 @@ export function LibraryFooter({
         {/* Right flex: settings button */}
         <Flex flex="1" justifyContent="flex-end" alignItems="center" gap={2}>
           {onOpenSettings && (
-            <Tooltip content={t('openSettings')}>
-              <IconButton
-                aria-label={t('openSettings')}
-                onClick={onOpenSettings}
-                size="xs"
-                variant="ghost"
-                colorPalette="gray"
-                minW="auto"
-                h="auto"
-                p={0}
-                opacity={0.4}
-                _hover={{ opacity: 1 }}
-              >
-                <BsGear />
-              </IconButton>
-            </Tooltip>
+            <MinimalIconButton
+              aria-label={t('openSettings')}
+              onClick={onOpenSettings}
+              tooltip={t('openSettings')}
+            >
+              <BsGear />
+            </MinimalIconButton>
           )}
         </Flex>
       </HStack>
