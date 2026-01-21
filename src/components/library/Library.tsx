@@ -1,4 +1,4 @@
-import { VStack } from '@chakra-ui/react';
+import { VStack, Box } from '@chakra-ui/react';
 import { BookUpload } from './BookUpload';
 import { LanguageSelectionDrawer } from './LanguageSelectionDrawer';
 import { SettingsDrawer } from '../settings/SettingsDrawer';
@@ -12,6 +12,7 @@ export function Library() {
   const { t } = useI18n();
   const {
     books,
+    sortedBooks,
     loading,
     uploadModalOpen,
     setUploadModalOpen,
@@ -26,6 +27,10 @@ export function Library() {
     handleAutoStopModeChange,
     handleShowControlsChange,
     handleSettingsChange,
+    sortField,
+    sortDirection,
+    setSortField,
+    setSortDirection,
   } = useLibrary();
 
   if (loading) {
@@ -53,9 +58,16 @@ export function Library() {
       onOpenSettings={() => setShowSettings(true)}
       onOpenLanguageSelection={() => setShowLanguageSelection(true)}
     >
-      <VStack align="stretch" gap={6} flex="1" overflow="auto" px={2} pt={2}>
-        <LibraryHeader onUploadClick={() => setUploadModalOpen(true)} />
-        <BookGrid books={books} />
+      <VStack align="stretch" gap={6} flex="1" overflow="auto" pt={2}>
+        <Box px={2}>
+          <LibraryHeader
+            sortField={sortField}
+            sortDirection={sortDirection}
+            onSortFieldChange={setSortField}
+            onSortDirectionChange={setSortDirection}
+          />
+        </Box>
+        <BookGrid books={sortedBooks} onAddBook={() => setUploadModalOpen(true)} />
       </VStack>
       
       <BookUpload

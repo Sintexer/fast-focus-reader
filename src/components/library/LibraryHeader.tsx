@@ -1,29 +1,33 @@
 import { HStack, Text } from '@chakra-ui/react';
-import { BsPlayCircleFill, BsPlus, BsPlusCircleFill } from 'react-icons/bs';
-import { MinimalIconButton } from '../ui/MinimalIconButton';
 import { useI18n } from '../../i18n/useI18n';
+import { BookSort, type SortField, type SortDirection } from './BookSort';
 
 export interface LibraryHeaderProps {
-  onUploadClick: () => void;
+  sortField: SortField;
+  sortDirection: SortDirection;
+  onSortFieldChange: (field: SortField) => void;
+  onSortDirectionChange: (direction: SortDirection) => void;
 }
 
-export function LibraryHeader({ onUploadClick }: LibraryHeaderProps) {
+export function LibraryHeader({
+  sortField,
+  sortDirection,
+  onSortFieldChange,
+  onSortDirectionChange,
+}: LibraryHeaderProps) {
   const { t } = useI18n();
 
   return (
-    <HStack justify="space-between" align="center">
+    <HStack justify="space-between" align="center" flexWrap="wrap" gap={4}>
       <Text fontSize="2xl" fontWeight="bold">
         {t('library')}
       </Text>
-      <MinimalIconButton
-        onClick={onUploadClick}
-        colorPalette="green"
-        tooltip={t('uploadBook')}
-        aria-label={t('uploadBook')}
-        opacity={0.8}
-      >
-        <BsPlusCircleFill />
-      </MinimalIconButton>
+      <BookSort
+        sortField={sortField}
+        sortDirection={sortDirection}
+        onSortFieldChange={onSortFieldChange}
+        onSortDirectionChange={onSortDirectionChange}
+      />
     </HStack>
   );
 }

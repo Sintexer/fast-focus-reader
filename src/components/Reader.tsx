@@ -1,7 +1,7 @@
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {useLocation, useNavigate, useParams} from 'react-router-dom';
 import {useReader} from '../hooks/useReader';
-import {type Book, getBook, getSettingsOrDefault, saveSettings, type Settings, getInitialWPM} from '../utils/db';
+import {type Book, getBook, saveBook, getSettingsOrDefault, saveSettings, type Settings, getInitialWPM} from '../utils/db';
 import {getStoredWPM} from '../utils/wpmStorage';
 import {ReaderMainPanel} from './reader/ReaderMainPanel';
 import {ReaderControlsPanel, type ReaderControlsPanelRef} from './reader/ReaderControlsPanel';
@@ -70,9 +70,15 @@ export function Reader() {
         // Only process if we're still on the reader route
         if (location.pathname.startsWith('/book/')) {
             if (bookId) {
-                getBook(bookId).then((loadedBook) => {
+                getBook(bookId).then(async (loadedBook) => {
                     if (loadedBook) {
                         setBook(loadedBook);
+                        // Update lastReadAt timestamp when book is opened
+                        const updatedBook: Book = {
+                            ...loadedBook,
+                            lastReadAt: Date.now(),
+                        };
+                        await saveBook(updatedBook);
                     } else {
                         // Book not found, redirect to library
                         navigate('/', {replace: true});

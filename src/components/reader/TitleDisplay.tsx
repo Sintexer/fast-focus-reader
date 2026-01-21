@@ -11,7 +11,7 @@ export interface TitleDisplayProps {
  */
 export function TitleDisplay({ title, type }: TitleDisplayProps) {
   const isVolume = type === 'volume';
-  
+
   return (
     <VStack
       w="100%"
@@ -19,18 +19,18 @@ export function TitleDisplay({ title, type }: TitleDisplayProps) {
       py={8}
     >
 
-              <Heading
-                as="h2"
-                size={isVolume ? "2xl" : "2xl"}
-                fontWeight="semibold"
-                textAlign="center"
-                color="gray.900"
-                _dark={{ color: 'gray.100' }}
-                lineHeight="1.3"
-                textTransform={isVolume ? "uppercase" : "none"}
-              >
-                {title}
-              </Heading>
+      <Heading
+        as="h2"
+        size="2xl"
+        fontWeight="semibold"
+        textAlign="center"
+        color="gray.900"
+        _dark={{ color: 'gray.100' }}
+        lineHeight="1.3"
+        textTransform={isVolume ? "uppercase" : "none"}
+      >
+        {title}
+      </Heading>
     </VStack>
   );
 }

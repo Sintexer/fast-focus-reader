@@ -37,6 +37,7 @@ export interface Book {
   language: 'en' | 'ru';
   structure: BookStructure;
   createdAt: number;
+  lastReadAt?: number; // Timestamp when book was last opened for reading
 }
 
 export interface Progress {

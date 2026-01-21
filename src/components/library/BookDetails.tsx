@@ -212,7 +212,8 @@ export function BookDetails() {
         <Flex
           direction={{ base: 'column', md: 'row' }}
           gap={8}
-          align={{ base: 'center', md: 'flex-start' }}
+          align="center"
+          justify="center"
           py={8}
         >
           {/* Book cover/silhouette */}

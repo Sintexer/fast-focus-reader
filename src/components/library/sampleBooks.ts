@@ -40,6 +40,7 @@ export function createSampleBooks(): Book[] {
       ],
     },
     createdAt: Date.now(),
+    lastReadAt: 0,
   };
 
   const book2: Book = {
@@ -63,6 +64,7 @@ export function createSampleBooks(): Book[] {
       ],
     },
     createdAt: Date.now(),
+    lastReadAt: 0,
   };
 
   const book3: Book = {
@@ -158,6 +160,7 @@ export function createSampleBooks(): Book[] {
       ],
     },
     createdAt: Date.now(),
+    lastReadAt: 0,
   };
 
   return [book1, book2, book3];

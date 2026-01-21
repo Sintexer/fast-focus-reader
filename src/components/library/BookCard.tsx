@@ -35,8 +35,6 @@ export function BookCard({ book }: BookCardProps) {
       onClick={() => navigate(`/book/${book.id}/details`)}
       transition="all 0.2s"
       _hover={{
-        borderColor: 'green.500',
-        _dark: { borderColor: 'green.400' },
         boxShadow: 'xl',
         transform: 'translateY(-4px)',
       }}

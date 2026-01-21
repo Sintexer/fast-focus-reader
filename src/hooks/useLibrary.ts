@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { getAllBooks, saveBook, getSettingsOrDefault, saveSettings, type Book, type Settings } from '../utils/db';
 import { createSampleBooks } from '../components/library/sampleBooks';
 import type { AutoStopMode } from '../components/settings/types';
+import type { SortField, SortDirection } from '../components/library/BookSort';
 
 export function useLibrary() {
   const [books, setBooks] = useState<Book[]>([]);
@@ -12,6 +13,8 @@ export function useLibrary() {
   const [autoStopMode, setAutoStopMode] = useState<AutoStopMode>('sentence');
   const [showControls, setShowControls] = useState(false);
   const [settings, setSettings] = useState<Settings | null>(null);
+  const [sortField, setSortField] = useState<SortField>('lastReadAt');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
   // Load settings on mount
   useEffect(() => {
@@ -80,6 +83,43 @@ export function useLibrary() {
     setSettings(updatedSettings);
   }, []);
 
+  // Sort books based on current sort settings
+  const sortedBooks = useMemo(() => {
+    const booksCopy = [...books];
+    
+    booksCopy.sort((a, b) => {
+      let aValue: number | string;
+      let bValue: number | string;
+      
+      switch (sortField) {
+        case 'lastReadAt':
+          aValue = a.lastReadAt ?? 0;
+          bValue = b.lastReadAt ?? 0;
+          break;
+        case 'title':
+          aValue = a.title.toLowerCase();
+          bValue = b.title.toLowerCase();
+          break;
+        case 'createdAt':
+          aValue = a.createdAt;
+          bValue = b.createdAt;
+          break;
+        default:
+          return 0;
+      }
+      
+      if (aValue < bValue) {
+        return sortDirection === 'asc' ? -1 : 1;
+      }
+      if (aValue > bValue) {
+        return sortDirection === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
+    
+    return booksCopy;
+  }, [books, sortField, sortDirection]);
+
   return {
     books,
     loading,
@@ -96,5 +136,10 @@ export function useLibrary() {
     handleAutoStopModeChange,
     handleShowControlsChange,
     handleSettingsChange,
+    sortedBooks,
+    sortField,
+    sortDirection,
+    setSortField,
+    setSortDirection,
   };
 }

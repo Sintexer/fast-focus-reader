@@ -49,6 +49,7 @@ export function parseTextToBook(
       volumes: [volume],
     },
     createdAt: Date.now(),
+    lastReadAt: 0,
   };
   
   return book;
@@ -122,6 +123,7 @@ export async function parseFileToBook(
       volumes: [volume],
     },
     createdAt: Date.now(),
+    lastReadAt: 0,
   };
 
   return book;
