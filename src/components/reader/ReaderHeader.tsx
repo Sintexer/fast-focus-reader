@@ -1,12 +1,14 @@
-import { HStack, Text, Icon, Box } from '@chakra-ui/react';
+import { HStack, Text, Icon, Box, Button } from '@chakra-ui/react';
 import type { Book } from '../../utils/db';
 import { BsCardList } from 'react-icons/bs';
+import { useI18n } from '../../i18n/useI18n';
 
 export interface ReaderHeaderProps {
   book: Book | null;
   volumeId: string;
   chapterId: string;
   onToggleTOC?: () => void;
+  onBackToLibrary?: () => void;
 }
 
 /**
@@ -19,7 +21,10 @@ export function ReaderHeader({
   volumeId,
   chapterId,
   onToggleTOC,
+  onBackToLibrary,
 }: ReaderHeaderProps) {
+  const { t } = useI18n();
+  
   if (!book) return null;
 
   const volume = book.structure.volumes.find(v => v.id === volumeId);
@@ -27,7 +32,25 @@ export function ReaderHeader({
 
   return (
     <Box p={2} w="100%">
-      <HStack justifyContent="flex-end" alignItems="center" w="100%">
+      <HStack justifyContent="space-between" alignItems="center" w="100%">
+        {onBackToLibrary && (
+          <Button
+            onClick={onBackToLibrary}
+            variant="plain"
+            size="xs"
+            minW="auto"
+            h="auto"
+            p={0}
+            fontSize="xs"
+            color="gray.500"
+            _dark={{ color: 'gray.400' }}
+            opacity={0.6}
+            _hover={{ opacity: 1 }}
+          >
+            {t('backToLibrary')}
+          </Button>
+        )}
+        {!onBackToLibrary && <Box />}
         <Box
           onClick={onToggleTOC}
           cursor={onToggleTOC ? "pointer" : "default"}

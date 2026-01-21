@@ -1,19 +1,15 @@
 import { HStack, Text } from '@chakra-ui/react';
 import { useI18n } from '../../i18n/useI18n';
-import { BookSort, type SortField, type SortDirection } from './BookSort';
+import { BookSort, type SortOption } from './BookSort';
 
 export interface LibraryHeaderProps {
-  sortField: SortField;
-  sortDirection: SortDirection;
-  onSortFieldChange: (field: SortField) => void;
-  onSortDirectionChange: (direction: SortDirection) => void;
+  sortOption: SortOption;
+  onSortChange: (option: SortOption) => void;
 }
 
 export function LibraryHeader({
-  sortField,
-  sortDirection,
-  onSortFieldChange,
-  onSortDirectionChange,
+  sortOption,
+  onSortChange,
 }: LibraryHeaderProps) {
   const { t } = useI18n();
 
@@ -23,10 +19,8 @@ export function LibraryHeader({
         {t('library')}
       </Text>
       <BookSort
-        sortField={sortField}
-        sortDirection={sortDirection}
-        onSortFieldChange={onSortFieldChange}
-        onSortDirectionChange={onSortDirectionChange}
+        sortOption={sortOption}
+        onSortChange={onSortChange}
       />
     </HStack>
   );

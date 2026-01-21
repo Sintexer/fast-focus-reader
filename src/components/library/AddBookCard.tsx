@@ -11,8 +11,8 @@ export function AddBookCard({ onClick }: AddBookCardProps) {
 
   return (
     <Box
-      w="140px"
-      h="200px"
+      w="100%"
+      h="100%"
       bg="green.50"
       _dark={{ bg: 'green.900' }}
       borderRadius="md"

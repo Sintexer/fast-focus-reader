@@ -357,6 +357,7 @@ export function Reader() {
                         volumeId={reader.state.volumeId}
                         chapterId={reader.state.chapterId}
                         onToggleTOC={() => setTocOpen(!tocOpen)}
+                        onBackToLibrary={() => navigate('/', { replace: false })}
                     />
 
                     {/* Main content area - main panel and controls as siblings */}

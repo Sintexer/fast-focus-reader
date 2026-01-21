@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { getAllBooks, saveBook, getSettingsOrDefault, saveSettings, type Book, type Settings } from '../utils/db';
 import { createSampleBooks } from '../components/library/sampleBooks';
 import type { AutoStopMode } from '../components/settings/types';
-import type { SortField, SortDirection } from '../components/library/BookSort';
+import type { SortOption, SortField, SortDirection } from '../components/library/BookSort';
 
 export function useLibrary() {
   const [books, setBooks] = useState<Book[]>([]);
@@ -13,8 +13,7 @@ export function useLibrary() {
   const [autoStopMode, setAutoStopMode] = useState<AutoStopMode>('sentence');
   const [showControls, setShowControls] = useState(false);
   const [settings, setSettings] = useState<Settings | null>(null);
-  const [sortField, setSortField] = useState<SortField>('lastReadAt');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [sortOption, setSortOption] = useState<SortOption>('lastReadAt-desc');
 
   // Load settings on mount
   useEffect(() => {
@@ -86,6 +85,7 @@ export function useLibrary() {
   // Sort books based on current sort settings
   const sortedBooks = useMemo(() => {
     const booksCopy = [...books];
+    const [sortField, sortDirection] = sortOption.split('-') as [SortField, SortDirection];
     
     booksCopy.sort((a, b) => {
       let aValue: number | string;
@@ -118,7 +118,7 @@ export function useLibrary() {
     });
     
     return booksCopy;
-  }, [books, sortField, sortDirection]);
+  }, [books, sortOption]);
 
   return {
     books,
@@ -137,9 +137,7 @@ export function useLibrary() {
     handleShowControlsChange,
     handleSettingsChange,
     sortedBooks,
-    sortField,
-    sortDirection,
-    setSortField,
-    setSortDirection,
+    sortOption,
+    setSortOption,
   };
 }

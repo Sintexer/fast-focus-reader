@@ -27,10 +27,8 @@ export function Library() {
     handleAutoStopModeChange,
     handleShowControlsChange,
     handleSettingsChange,
-    sortField,
-    sortDirection,
-    setSortField,
-    setSortDirection,
+    sortOption,
+    setSortOption,
   } = useLibrary();
 
   if (loading) {
@@ -60,12 +58,10 @@ export function Library() {
     >
       <VStack align="stretch" gap={6} flex="1" overflow="auto" pt={2}>
         <Box px={2}>
-          <LibraryHeader
-            sortField={sortField}
-            sortDirection={sortDirection}
-            onSortFieldChange={setSortField}
-            onSortDirectionChange={setSortDirection}
-          />
+        <LibraryHeader
+          sortOption={sortOption}
+          onSortChange={setSortOption}
+        />
         </Box>
         <BookGrid books={sortedBooks} onAddBook={() => setUploadModalOpen(true)} />
       </VStack>

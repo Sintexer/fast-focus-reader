@@ -1,6 +1,7 @@
 import { splitIntoParagraphs, splitIntoSentences, detectLanguage } from './textProcessor';
 import type { Book, Chapter, Volume } from './db';
 import { parseFB2, parseEPUB } from './bookParsers';
+import { isZipFile, unzipFile } from './fileUtils';
 
 /**
  * Parse text content into Book structure
@@ -56,7 +57,8 @@ export function parseTextToBook(
 }
 
 /**
- * Parse a file (TXT, EPUB, or FB2) into Book structure
+ * Parse a file (TXT, EPUB, FB2, or ZIP) into Book structure
+ * If the file is a ZIP, it will be unpacked and the appropriate parser will be used
  */
 export async function parseFileToBook(
   file: File,
@@ -67,16 +69,24 @@ export async function parseFileToBook(
   } = {}
 ): Promise<Book> {
   const fileName = file.name.toLowerCase();
-  let parsedData: { title: string; author?: string; chapters: Array<{ title: string; paragraphs: string[][] }> };
+  let parsedData: { 
+    title: string; 
+    author?: string;
+    language?: 'en' | 'ru';
+    chapters?: Array<{ title: string; paragraphs: string[][] }>;
+    volumes?: Array<{ title: string; chapters: Array<{ title: string; paragraphs: string[][] }> }>;
+  };
 
-  if (fileName.endsWith('.fb2')) {
-    parsedData = await parseFB2(file);
-  } else if (fileName.endsWith('.epub')) {
+  // Check file extension first - if it's a known format, parse directly
+  // EPUB files are technically ZIP archives, but we should parse them as EPUB, not unpack them
+  if (fileName.endsWith('.epub')) {
+    // Parse EPUB directly (even though it's technically a ZIP)
     parsedData = await parseEPUB(file);
+  } else if (fileName.endsWith('.fb2')) {
+    parsedData = await parseFB2(file);
   } else if (fileName.endsWith('.txt')) {
     // For TXT files, read as text and use existing parser
     const text = await file.text();
-    const language = options.language || detectLanguage(text);
     const paragraphs = splitIntoParagraphs(text);
     const paragraphSentences: string[][] = [];
     
@@ -91,26 +101,116 @@ export async function parseFileToBook(
       author: options.author,
       chapters: chapters.map(ch => ({ title: ch.title, paragraphs: ch.paragraphs || [] })),
     };
+  } else if (fileName.endsWith('.zip')) {
+    // Only unpack if it's explicitly a .zip file
+    const unpackedFiles = await unzipFile(file);
+    
+    // Check for EPUB files
+    const epubFiles = Array.from(unpackedFiles.values()).filter((f) =>
+      f.name.toLowerCase().endsWith('.epub')
+    );
+    
+    // Check for FB2 files
+    const fb2Files = Array.from(unpackedFiles.values()).filter((f) =>
+      f.name.toLowerCase().endsWith('.fb2')
+    );
+    
+    // Check for TXT files
+    const txtFiles = Array.from(unpackedFiles.values()).filter((f) =>
+      f.name.toLowerCase().endsWith('.txt')
+    );
+    
+    // Determine which parser to use based on file types found
+    if (epubFiles.length > 0) {
+      if (epubFiles.length > 1) {
+        throw new Error('Multiple EPUB files found in ZIP archive. Expected exactly one.');
+      }
+      // Create a File-like object from the unpacked EPUB
+      // Convert Uint8Array to ArrayBuffer to ensure proper type
+      const uint8Array = epubFiles[0].content;
+      const arrayBuffer = new ArrayBuffer(uint8Array.length);
+      const newView = new Uint8Array(arrayBuffer);
+      newView.set(uint8Array);
+      const epubBlob = new Blob([arrayBuffer], { type: 'application/epub+zip' });
+      const epubFile = new File([epubBlob], epubFiles[0].name, { type: 'application/epub+zip' });
+      parsedData = await parseEPUB(epubFile);
+    } else if (fb2Files.length > 0) {
+      if (fb2Files.length > 1) {
+        throw new Error('Multiple FB2 files found in ZIP archive. Expected exactly one.');
+      }
+      parsedData = await parseFB2(unpackedFiles);
+    } else if (txtFiles.length > 0) {
+      if (txtFiles.length > 1) {
+        throw new Error('Multiple TXT files found in ZIP archive. Expected exactly one.');
+      }
+      // For TXT files, read as text and use existing parser
+      const decoder = new TextDecoder('utf-8');
+      const text = decoder.decode(txtFiles[0].content);
+      const paragraphs = splitIntoParagraphs(text);
+      const paragraphSentences: string[][] = [];
+      
+      for (const paragraph of paragraphs) {
+        const sentences = splitIntoSentences(paragraph);
+        paragraphSentences.push(sentences);
+      }
+      
+      const chapters = detectChapters(paragraphSentences);
+      parsedData = {
+        title: options.title || txtFiles[0].name.replace(/\.txt$/i, ''),
+        author: options.author,
+        chapters: chapters.map(ch => ({ title: ch.title, paragraphs: ch.paragraphs || [] })),
+      };
+    } else {
+      throw new Error('No supported file format found in ZIP archive. Supported: .txt, .epub, .fb2');
+    }
   } else {
-    throw new Error(`Unsupported file format. Supported: .txt, .epub, .fb2`);
+    // Unknown extension - check if it's a ZIP by magic bytes
+    const isZip = await isZipFile(file);
+    if (isZip) {
+      throw new Error(`File appears to be a ZIP archive but doesn't have .zip extension. Please rename it to .zip or use a supported format (.txt, .epub, .fb2)`);
+    } else {
+      throw new Error(`Unsupported file format. Supported: .txt, .epub, .fb2, .zip`);
+    }
   }
 
   // Convert to Book structure
-  const language = options.language || detectLanguage(
-    parsedData.chapters.flatMap(ch => ch.paragraphs.flat()).join(' ')
-  );
+  // Check if parsedData has volumes (EPUB) or chapters (FB2, TXT)
+  let volumes: Volume[];
+  
+  if ('volumes' in parsedData && Array.isArray(parsedData.volumes)) {
+    // EPUB format with volumes
+    volumes = parsedData.volumes.map((vol, volIndex) => ({
+      id: `vol-${volIndex + 1}`,
+      title: vol.title || '',
+      chapters: vol.chapters.map((ch, chIndex) => ({
+        id: `ch-${volIndex + 1}-${chIndex + 1}`,
+        title: ch.title,
+        paragraphs: ch.paragraphs || [],
+      })),
+    }));
+  } else if ('chapters' in parsedData && Array.isArray(parsedData.chapters)) {
+    // FB2 or TXT format with flat chapters
+    const chapters: Chapter[] = parsedData.chapters.map((ch, index) => ({
+      id: `ch-${index + 1}`,
+      title: ch.title,
+      paragraphs: ch.paragraphs || [],
+    }));
 
-  const chapters: Chapter[] = parsedData.chapters.map((ch, index) => ({
-    id: `ch-${index + 1}`,
-    title: ch.title,
-    paragraphs: ch.paragraphs,
-  }));
+    volumes = [{
+      id: 'vol-1',
+      title: '',
+      chapters,
+    }];
+  } else {
+    throw new Error('Invalid parsed data structure');
+  }
 
-  const volume: Volume = {
-    id: 'vol-1',
-    title: '',
-    chapters,
-  };
+  // Determine language: use parsed language if available, otherwise use options, otherwise detect from content
+  const language = parsedData.language || 
+    options.language || 
+    detectLanguage(
+      volumes.flatMap(vol => vol.chapters.flatMap(ch => (ch.paragraphs || []).flat())).join(' ')
+    );
 
   const bookId = `book-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
 
@@ -120,7 +220,7 @@ export async function parseFileToBook(
     author: options.author || parsedData.author,
     language,
     structure: {
-      volumes: [volume],
+      volumes,
     },
     createdAt: Date.now(),
     lastReadAt: 0,

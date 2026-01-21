@@ -76,7 +76,7 @@ export function ReaderFooter({
           
           {/* Sentence number */}
           <Text fontSize="xs" color="gray.500" _dark={{ color: 'gray.400' }}>
-            {t('sentence')} {currentSentenceIndex + 1} {t('of')} {maxSentenceIndex + 1}
+            {t('sentence')}: {currentSentenceIndex + 1} {t('of')} {maxSentenceIndex + 1}
           </Text>
         </Flex>
 

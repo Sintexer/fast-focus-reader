@@ -23,7 +23,7 @@ import { useI18n } from '../../i18n/useI18n';
 
 type UploadMode = 'file' | 'text';
 
-const SUPPORTED_FILE_TYPES = ['.txt', '.epub', '.fb2'];
+const SUPPORTED_FILE_TYPES = ['.txt', '.epub', '.fb2', '.zip'];
 
 interface BookUploadProps {
   isOpen: boolean;
@@ -65,14 +65,14 @@ export function BookUpload({ isOpen, onClose, onBookSaved }: BookUploadProps) {
         // For TXT, read as text and use text parser
         const text = await selectedFile.text();
         parsedBook = parseTextToBook(text, {
-          title: title || selectedFile.name.replace(/\.(txt|epub|fb2)$/i, ''),
+          title: title || selectedFile.name.replace(/\.(txt|epub|fb2|zip)$/i, ''),
           author: author || undefined,
           language,
         });
       } else {
-        // For EPUB and FB2, use file parser
+        // For EPUB, FB2, and ZIP, use file parser
         parsedBook = await parseFileToBook(selectedFile, {
-          title: title || selectedFile.name.replace(/\.(txt|epub|fb2)$/i, ''),
+          title: title || selectedFile.name.replace(/\.(txt|epub|fb2|zip)$/i, ''),
           author: author || undefined,
           language,
         });
@@ -220,6 +220,9 @@ export function BookUpload({ isOpen, onClose, onBookSaved }: BookUploadProps) {
                         
                         <Text fontSize="xs" color="fg.muted">
                           {t('supportedFileTypes')}: {SUPPORTED_FILE_TYPES.join(', ')}
+                        </Text>
+                        <Text fontSize="xs" color="fg.muted" fontStyle="italic">
+                          {t('zippedFormatsNote')}
                         </Text>
                       </VStack>
                     )}

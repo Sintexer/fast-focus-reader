@@ -19,8 +19,8 @@ export function BookCard({ book }: BookCardProps) {
 
   return (
     <Box
-      w="140px"
-      h="200px"
+      w="100%"
+      h="100%"
       bg="gray.100"
       _dark={{ bg: 'gray.700' }}
       borderRadius="md"

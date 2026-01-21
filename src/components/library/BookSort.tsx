@@ -1,56 +1,76 @@
-import { HStack, Text, NativeSelect, IconButton } from '@chakra-ui/react';
-import { BsArrowUp, BsArrowDown } from 'react-icons/bs';
+import { useMemo } from 'react';
+import { HStack, Text, Select, Portal, Box, createListCollection } from '@chakra-ui/react';
 import { useI18n } from '../../i18n/useI18n';
+
+export type SortOption = 
+  | 'lastReadAt-desc' 
+  | 'lastReadAt-asc' 
+  | 'title-asc' 
+  | 'title-desc' 
+  | 'createdAt-desc' 
+  | 'createdAt-asc';
 
 export type SortField = 'lastReadAt' | 'title' | 'createdAt';
 export type SortDirection = 'asc' | 'desc';
 
 export interface BookSortProps {
-  sortField: SortField;
-  sortDirection: SortDirection;
-  onSortFieldChange: (field: SortField) => void;
-  onSortDirectionChange: (direction: SortDirection) => void;
+  sortOption: SortOption;
+  onSortChange: (option: SortOption) => void;
 }
 
 export function BookSort({
-  sortField,
-  sortDirection,
-  onSortFieldChange,
-  onSortDirectionChange,
+  sortOption,
+  onSortChange,
 }: BookSortProps) {
   const { t } = useI18n();
 
-  const handleDirectionToggle = () => {
-    onSortDirectionChange(sortDirection === 'asc' ? 'desc' : 'asc');
-  };
+  const sortOptions = useMemo(() => createListCollection({
+    items: [
+      { label: t('mostRecentFirst'), value: 'lastReadAt-desc' },
+      { label: t('oldestFirst'), value: 'lastReadAt-asc' },
+      { label: t('alphabeticallyAscending'), value: 'title-asc' },
+      { label: t('alphabeticallyDescending'), value: 'title-desc' },
+      { label: t('newestFirst'), value: 'createdAt-desc' },
+      { label: t('oldestAddedFirst'), value: 'createdAt-asc' },
+    ],
+  }), [t]);
 
   return (
     <HStack gap={2} align="center">
       <Text fontSize="sm" color="gray.600" _dark={{ color: 'gray.400' }}>
         {t('sortBy')}:
       </Text>
-      <NativeSelect.Root size="sm" width="auto">
-        <NativeSelect.Field
-          value={sortField}
-          onChange={(e) => onSortFieldChange(e.currentTarget.value as SortField)}
+      <Box flex="1">
+        <Select.Root
+          collection={sortOptions}
+          value={[sortOption]}
+          onValueChange={(e) => onSortChange(e.value[0] as SortOption)}
+          size="sm"
+          width="100%"
         >
-          <option value="lastReadAt">{t('lastRead')}</option>
-          <option value="title">{t('title')}</option>
-          <option value="createdAt">{t('dateAdded')}</option>
-        </NativeSelect.Field>
-        <NativeSelect.Indicator />
-      </NativeSelect.Root>
-      <IconButton
-        onClick={handleDirectionToggle}
-        variant="ghost"
-        size="xs"
-        aria-label={t('sortDirection')}
-        minW="auto"
-        h="auto"
-        p={0}
-      >
-        {sortDirection === 'asc' ? <BsArrowUp /> : <BsArrowDown />}
-      </IconButton>
+          <Select.HiddenSelect />
+          <Select.Control>
+            <Select.Trigger>
+              <Select.ValueText />
+            </Select.Trigger>
+            <Select.IndicatorGroup>
+              <Select.Indicator />
+            </Select.IndicatorGroup>
+          </Select.Control>
+          <Portal>
+            <Select.Positioner>
+              <Select.Content>
+                {sortOptions.items.map((item: { label: string; value: string }) => (
+                  <Select.Item item={item} key={item.value}>
+                    {item.label}
+                    <Select.ItemIndicator />
+                  </Select.Item>
+                ))}
+              </Select.Content>
+            </Select.Positioner>
+          </Portal>
+        </Select.Root>
+      </Box>
     </HStack>
   );
 }
